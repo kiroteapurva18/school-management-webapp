@@ -1,0 +1,22 @@
+[
+  {
+    "role": "admin",
+    "email": "admin@school.com",
+    "password": "123456"
+  },
+  {
+    "role": "teacher",
+    "email": "teacher1@school.com",
+    "password": "123456"
+  },
+  {
+    "role": "student",
+    "email": "student1@school.com",
+    "password": "123456"
+  },
+  {
+    "role": "parent",
+    "email": "parent1@school.com",
+    "password": "123456"
+  }
+]

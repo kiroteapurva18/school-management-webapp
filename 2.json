@@ -1,0 +1,14 @@
+[
+  {
+    "name": "Rahul Sharma",
+    "class": "10A",
+    "rollNumber": 1,
+    "email": "rahul@student.com"
+  },
+  {
+    "name": "Priya Singh",
+    "class": "10A",
+    "rollNumber": 2,
+    "email": "priya@student.com"
+  }
+]
