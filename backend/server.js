@@ -28,7 +28,8 @@ const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 const startServer = async () => {
   try {
     // ✅ Connect DB first
-    await connectDB();
+    //await connectDB();
+    console.log("Skipping DB connection for test");
 
     // 🛡️ Security & Middleware
     app.set("trust proxy", 1);
