@@ -1,3 +1,7 @@
+console.log("=== ENV DEBUG ===");
+console.log("MONGO_URI:", process.env.MONGO_URI);
+console.log("JWT_SECRET:", process.env.JWT_SECRET);
+
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
