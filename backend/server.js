@@ -22,6 +22,9 @@ import assignmentRoutes from "./routes/assignmentRoutes.js";
 import timetableRoutes from "./routes/timetableRoutes.js";
 import leaveRequestRoutes from "./routes/leaveRequestRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import homeworkRoutes from "./routes/homeworkRoutes.js";
+import resultRoutes from "./routes/resultRoutes.js";
+import feeRoutes from "./routes/feeRoutes.js";
 
 dotenv.config();
 
@@ -91,6 +94,9 @@ const startServer = async () => {
     app.use("/api/timetable", timetableRoutes);
     app.use("/api/leave-request", leaveRequestRoutes);
     app.use("/api/notifications", notificationRoutes);
+    app.use("/api/homework", homeworkRoutes);
+    app.use("/api/results", resultRoutes);
+    app.use("/api/fees", feeRoutes);
 
     // ❌ Error Handling
     app.use(notFound);
