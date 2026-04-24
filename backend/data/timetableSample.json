@@ -1,16 +1,20 @@
 [
   {
-    "class": "8th",
+    "class": "5",
     "division": "A",
     "day": "Monday",
-    "periods": [
-      { "subject": "Math", "teacherId": "<TEACHER_ID>", "startTime": "10:00", "endTime": "10:50" },
-      { "subject": "Science", "teacherId": "<TEACHER_ID>", "startTime": "11:00", "endTime": "11:50" },
-      { "subject": "English", "teacherId": "<TEACHER_ID>", "startTime": "12:00", "endTime": "12:50" },
-      { "subject": "History", "teacherId": "<TEACHER_ID>", "startTime": "13:30", "endTime": "14:20" },
-      { "subject": "Computer", "teacherId": "<TEACHER_ID>", "startTime": "14:30", "endTime": "15:20" },
-      { "subject": "Sports", "teacherId": "<TEACHER_ID>", "startTime": "15:30", "endTime": "16:20" },
-      { "subject": "Art", "teacherId": "<TEACHER_ID>", "startTime": "16:20", "endTime": "17:00" }
-    ]
+    "startTime": "10:00",
+    "endTime": "11:00",
+    "subject": "Mathematics",
+    "teacherId": "<TEACHER_ID>"
+  },
+  {
+    "class": "5",
+    "division": "A",
+    "day": "Monday",
+    "startTime": "11:00",
+    "endTime": "12:00",
+    "subject": "Science",
+    "teacherId": "<TEACHER_ID>"
   }
 ]

@@ -14,6 +14,7 @@ export const AuthProvider = ({ children }) => {
     }
   });
   const [loading, setLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -22,6 +23,23 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem("user");
     }
   }, [user]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setProfileLoading(false);
+      return;
+    }
+    api
+      .get("/auth/me")
+      .then(({ data }) => setUser(data))
+      .catch(() => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setUser(null);
+      })
+      .finally(() => setProfileLoading(false));
+  }, []);
 
   const login = async (email, password) => {
     setLoading(true);
@@ -70,9 +88,10 @@ export const AuthProvider = ({ children }) => {
       login,
       register,
       logout,
-      isAuthenticated: Boolean(user)
+      isAuthenticated: Boolean(user),
+      profileLoading
     }),
-    [user, loading]
+    [user, loading, profileLoading]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

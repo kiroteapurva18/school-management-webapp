@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import isEmail from "validator/lib/isEmail.js";
 import User from "../models/User.js";
 import asyncHandler from "../utils/asyncHandler.js";
+import Student from "../models/Student.js";
 
 // Generate JWT
 const generateToken = (id) =>
@@ -97,5 +98,30 @@ export const login = asyncHandler(async (req, res) => {
       childClass: user.childClass,
       childDivision: user.childDivision
     }
+  });
+});
+
+export const getMe = asyncHandler(async (req, res) => {
+  let className = req.user.className;
+  let division = req.user.division;
+
+  if (req.user.role === "student" && (!className || !division)) {
+    const student = await Student.findOne({ email: req.user.email }).select("class");
+    const match = student?.class?.trim()?.match(/^(\d+)\s*[-]?\s*([A-D])$/i);
+    if (match) {
+      className = match[1];
+      division = match[2].toUpperCase();
+    }
+  }
+
+  res.json({
+    id: req.user._id,
+    name: req.user.name,
+    email: req.user.email,
+    role: req.user.role,
+    className,
+    division,
+    childClass: req.user.childClass,
+    childDivision: req.user.childDivision
   });
 });
