@@ -10,6 +10,7 @@ const LeaveRequestsTab = ({ user }) => {
   const fetchTeacherItems = async () => {
     setLoading(true);
     const { data } = await api.get("/leave-request/teacher");
+    console.log("Teacher leave requests API response:", data);
     setItems(data);
     setLoading(false);
   };
@@ -43,7 +44,9 @@ const LeaveRequestsTab = ({ user }) => {
   };
 
   const updateStatus = async (id, status) => {
-    await api.put(`/leave-request/${id}`, { status });
+    const { data } = await api.put(`/leave-request/${id}`, { status });
+    console.log("Leave request status update response:", data);
+    alert(`Leave Request ${status}`);
     fetchTeacherItems();
   };
 

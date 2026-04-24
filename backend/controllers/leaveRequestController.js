@@ -34,7 +34,7 @@ const resolveParentChild = async (user) => {
 };
 
 export const createLeaveRequest = asyncHandler(async (req, res) => {
-  const { fromDate, toDate, reason, studentId, studentName, class: className, division } = req.body;
+  const { fromDate, toDate, reason, studentId, studentName, parentName, class: className, division } = req.body;
   console.log("leave request payload:", req.body);
   if (!fromDate || !toDate || !reason) {
     res.status(400);
@@ -51,12 +51,14 @@ export const createLeaveRequest = asyncHandler(async (req, res) => {
     studentId: studentId || child.studentId,
     studentName: studentName?.trim() || child.studentName,
     parentId: req.user._id,
+    parentName: parentName?.trim() || req.user.name,
     class: className?.trim() || child.className,
     division: mapDivision(division || child.division),
     fromDate,
     toDate,
     reason: reason.trim()
   });
+  console.log("leave request saved data:", leaveRequest);
 
   res.status(201).json({
     message: "Leave Request Submitted Successfully",
@@ -68,11 +70,12 @@ export const getTeacherLeaveRequests = asyncHandler(async (req, res) => {
   const records = await LeaveRequest.find({})
     .sort({ createdAt: -1 })
     .populate("parentId", "name email");
+  console.log("teacher leave request API response count:", records.length);
 
   res.json(
     records.map((item) => ({
       ...item.toObject(),
-      parentName: item.parentId?.name || "Parent"
+      parentName: item.parentName || item.parentId?.name || "Parent"
     }))
   );
 });
@@ -102,6 +105,6 @@ export const updateLeaveRequestStatus = asyncHandler(async (req, res) => {
 
   res.json({
     ...updated.toObject(),
-    parentName: updated.parentId?.name || "Parent"
+    parentName: updated.parentName || updated.parentId?.name || "Parent"
   });
 });
