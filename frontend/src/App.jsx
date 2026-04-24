@@ -61,7 +61,7 @@ const App = () => {
           <Route
             path="/assignments"
             element={
-              <ProtectedRoute allowedRoles={["admin", "teacher", "student", "parent"]}>
+              <ProtectedRoute allowedRoles={["teacher", "student"]}>
                 <AssignmentsPage />
               </ProtectedRoute>
             }
@@ -75,9 +75,9 @@ const App = () => {
             }
           />
           <Route
-            path="/my-timetable"
+            path="/my-day"
             element={
-              <ProtectedRoute allowedRoles={["teacher"]}>
+              <ProtectedRoute allowedRoles={["teacher", "admin"]}>
                 <TeacherTimetablePage />
               </ProtectedRoute>
             }
@@ -93,7 +93,7 @@ const App = () => {
           <Route
             path="/leave-requests"
             element={
-              <ProtectedRoute allowedRoles={["parent", "teacher", "admin"]}>
+              <ProtectedRoute allowedRoles={["parent", "teacher"]}>
                 <LeaveRequestsPage />
               </ProtectedRoute>
             }

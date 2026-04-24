@@ -12,7 +12,7 @@ const router = express.Router();
 router.use(protect);
 
 router.post("/", allowRoles("parent"), createLeaveRequest);
-router.get("/teacher", allowRoles("teacher", "admin"), getTeacherLeaveRequests);
-router.put("/:id", validateObjectId(), allowRoles("teacher", "admin"), updateLeaveRequestStatus);
+router.get("/teacher", allowRoles("teacher"), getTeacherLeaveRequests);
+router.put("/:id", validateObjectId(), allowRoles("teacher"), updateLeaveRequestStatus);
 
 export default router;

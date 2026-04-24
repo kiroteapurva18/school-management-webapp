@@ -7,7 +7,7 @@ const router = express.Router();
 router.use(protect);
 
 router.post("/", allowRoles("teacher"), createHomework);
-router.get("/", allowRoles("student", "parent", "teacher", "admin"), getHomework);
+router.get("/", allowRoles("student", "teacher"), getHomework);
 router.post("/upload", allowRoles("student"), homeworkPdfUpload.single("file"), uploadHomeworkSubmission);
 
 export default router;

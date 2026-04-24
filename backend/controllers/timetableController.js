@@ -317,6 +317,9 @@ export const getStudentTimetable = asyncHandler(async (req, res) => {
   const selectedClass = requestedClass || profile.className;
   const requestedDivision = requestedDivisionFromQuery || profile.division?.toUpperCase();
   const mappedDivision = mapDivision(requestedDivision);
+  console.log("student timetable -> user.class:", selectedClass);
+  console.log("student timetable -> user.division:", requestedDivision);
+  console.log("student timetable -> mapped division:", mappedDivision);
   if (!ALLOWED_DIVISIONS.includes(requestedDivision)) {
     return res.json({
       student: {
@@ -335,6 +338,7 @@ export const getStudentTimetable = asyncHandler(async (req, res) => {
     .sort({ day: 1, startTime: 1 })
     .lean();
   const hydrated = await hydrateTeacherNames(timetable);
+  console.log("student timetable -> API response count:", hydrated.length);
 
   res.json({
     student: {

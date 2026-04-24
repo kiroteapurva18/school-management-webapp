@@ -6,13 +6,11 @@ const roleNavItems = {
     { to: "/dashboard", label: "Dashboard" },
     { to: "/students", label: "Students" },
     { to: "/attendance", label: "Attendance" },
-    { to: "/teachers", label: "Teachers" },
-    { to: "/assignments", label: "Assignments" },
     { to: "/timetable", label: "Timetable" },
     { to: "/notifications", label: "Notifications" },
-    { to: "/leave-requests", label: "Leave Requests" },
     { to: "/results", label: "Results" },
-    { to: "/fees", label: "Fees" }
+    { to: "/fees", label: "Fees" },
+    { to: "/my-day", label: "My Day" }
   ],
   teacher: [
     { to: "/dashboard", label: "Dashboard" },
@@ -21,20 +19,17 @@ const roleNavItems = {
     { to: "/assignments", label: "Assignments" },
     { to: "/timetable", label: "Timetable" },
     { to: "/leave-requests", label: "Leave Requests" },
-    { to: "/results", label: "Results" }
+    { to: "/results", label: "Results" },
+    { to: "/my-day", label: "My Day" }
   ],
   student: [
     { to: "/dashboard", label: "Dashboard" },
     { to: "/assignments", label: "Assignments" },
     { to: "/timetable", label: "Timetable" },
-    { to: "/notifications", label: "Notifications" },
-    { to: "/results", label: "Results" },
-    { to: "/fees", label: "Fees" }
+    { to: "/notifications", label: "Notifications" }
   ],
   parent: [
     { to: "/dashboard", label: "Dashboard" },
-    { to: "/assignments", label: "Assignments" },
-    { to: "/timetable", label: "Timetable" },
     { to: "/notifications", label: "Notifications" },
     { to: "/leave-requests", label: "Leave Requests" },
     { to: "/results", label: "Results" },
