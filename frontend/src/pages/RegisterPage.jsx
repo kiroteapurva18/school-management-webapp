@@ -9,7 +9,11 @@ const RegisterPage = () => {
     name: "",
     email: "",
     password: "",
-    role: "student"
+    role: "student",
+    className: "",
+    division: "",
+    childClass: "",
+    childDivision: ""
   });
   const [error, setError] = useState("");
 
@@ -52,6 +56,44 @@ const RegisterPage = () => {
           <option value="student">Student</option>
           <option value="parent">Parent</option>
         </select>
+        {form.role === "student" && (
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              name="className"
+              placeholder="Class (e.g. 8th)"
+              value={form.className}
+              onChange={handleChange}
+              className="w-full rounded border p-2"
+            />
+            <input
+              name="division"
+              placeholder="Division (A-D)"
+              value={form.division}
+              onChange={handleChange}
+              className="w-full rounded border p-2"
+              maxLength={1}
+            />
+          </div>
+        )}
+        {form.role === "parent" && (
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              name="childClass"
+              placeholder="Child class (e.g. 8th)"
+              value={form.childClass}
+              onChange={handleChange}
+              className="w-full rounded border p-2"
+            />
+            <input
+              name="childDivision"
+              placeholder="Child division (A-D)"
+              value={form.childDivision}
+              onChange={handleChange}
+              className="w-full rounded border p-2"
+              maxLength={1}
+            />
+          </div>
+        )}
         <button disabled={loading} className="w-full rounded bg-blue-600 p-2 text-white hover:bg-blue-700">
           {loading ? "Creating..." : "Register"}
         </button>

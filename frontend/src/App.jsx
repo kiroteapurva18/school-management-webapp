@@ -9,6 +9,8 @@ import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import StudentsPage from "./pages/StudentsPage";
 import TeachersPage from "./pages/TeachersPage";
+import TeacherTimetablePage from "./pages/TeacherTimetablePage";
+import TimetablePage from "./pages/TimetablePage";
 
 const App = () => {
   const { isAuthenticated } = useAuth();
@@ -57,6 +59,22 @@ const App = () => {
             element={
               <ProtectedRoute allowedRoles={["admin", "teacher", "student", "parent"]}>
                 <AssignmentsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/timetable"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "teacher", "student", "parent"]}>
+                <TimetablePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-timetable"
+            element={
+              <ProtectedRoute allowedRoles={["teacher"]}>
+                <TeacherTimetablePage />
               </ProtectedRoute>
             }
           />

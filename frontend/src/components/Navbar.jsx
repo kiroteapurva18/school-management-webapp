@@ -7,21 +7,26 @@ const roleNavItems = {
     { to: "/students", label: "Students" },
     { to: "/teachers", label: "Teachers" },
     { to: "/attendance", label: "Attendance" },
-    { to: "/assignments", label: "Assignments" }
+    { to: "/assignments", label: "Assignments" },
+    { to: "/timetable", label: "Timetable" }
   ],
   teacher: [
     { to: "/dashboard", label: "Dashboard" },
     { to: "/students", label: "Students" },
     { to: "/attendance", label: "Attendance" },
-    { to: "/assignments", label: "Assignments" }
+    { to: "/assignments", label: "Assignments" },
+    { to: "/timetable", label: "Class Timetable" },
+    { to: "/my-timetable", label: "My Day" }
   ],
   student: [
     { to: "/dashboard", label: "Dashboard" },
-    { to: "/assignments", label: "Assignments" }
+    { to: "/assignments", label: "Assignments" },
+    { to: "/timetable", label: "Timetable" }
   ],
   parent: [
     { to: "/dashboard", label: "Dashboard" },
-    { to: "/assignments", label: "Assignments" }
+    { to: "/assignments", label: "Assignments" },
+    { to: "/timetable", label: "Timetable" }
   ]
 };
 

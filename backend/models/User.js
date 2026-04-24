@@ -9,7 +9,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["admin", "teacher", "student", "parent"],
       default: "student"
-    }
+    },
+    className: { type: String, trim: true },
+    division: { type: String, trim: true, uppercase: true },
+    childClass: { type: String, trim: true },
+    childDivision: { type: String, trim: true, uppercase: true }
   },
   { timestamps: true }
 );

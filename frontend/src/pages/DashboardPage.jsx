@@ -2,9 +2,9 @@ import useAuth from "../hooks/useAuth";
 
 const roleConfig = {
   admin: ["Manage users", "Oversee students/teachers", "Review all modules"],
-  teacher: ["Track attendance", "Create assignments", "Manage students"],
-  student: ["View assignments", "Track attendance status", "Access dashboard"],
-  parent: ["Monitor child records", "View attendance", "View assignments"]
+  teacher: ["Track attendance", "Create assignments", "Manage students", "View today's timetable"],
+  student: ["View assignments", "Track attendance status", "View timetable"],
+  parent: ["Monitor child records", "View attendance", "View child timetable"]
 };
 
 const DashboardPage = () => {

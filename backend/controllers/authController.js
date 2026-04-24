@@ -11,7 +11,7 @@ const generateToken = (id) =>
 
 // ================= REGISTER =================
 export const register = asyncHandler(async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role, className, division, childClass, childDivision } = req.body;
 
   if (!name || !email || !password) {
     res.status(400);
@@ -41,7 +41,11 @@ export const register = asyncHandler(async (req, res) => {
     name: name.trim(),
     email: normalizedEmail,
     password,
-    role: safeRole
+    role: safeRole,
+    className: className?.trim(),
+    division: division?.trim()?.toUpperCase(),
+    childClass: childClass?.trim(),
+    childDivision: childDivision?.trim()?.toUpperCase()
   });
 
   return res.status(201).json({
@@ -50,7 +54,11 @@ export const register = asyncHandler(async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
+      className: user.className,
+      division: user.division,
+      childClass: user.childClass,
+      childDivision: user.childDivision
     }
   });
 });
@@ -83,7 +91,11 @@ export const login = asyncHandler(async (req, res) => {
       id: user._id,
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
+      className: user.className,
+      division: user.division,
+      childClass: user.childClass,
+      childDivision: user.childDivision
     }
   });
 });
