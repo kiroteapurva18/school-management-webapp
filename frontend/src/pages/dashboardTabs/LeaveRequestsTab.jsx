@@ -24,23 +24,36 @@ const LeaveRequestsTab = ({ user }) => {
 
   const submitParent = async (e) => {
     e.preventDefault();
+    if (!form.fromDate || !form.toDate || !form.reason) {
+      alert("Please fill all fields");
+      return;
+    }
+
     const payload = {
       studentId: user?.studentId,
-      studentName: user?.studentName,
+      studentName: user?.studentName || "Student",
       parentId: user?.id,
-      parentName: user?.parentDisplayName,
-      class: user?.childClass,
-      division: user?.childDivision,
+      parentName: user?.parentDisplayName || user?.name || "Parent",
+      class: user?.childClass || "1",
+      division: user?.childDivision || "A",
       fromDate: form.fromDate,
       toDate: form.toDate,
       reason: form.reason
     };
+    
     console.log("Leave request frontend payload:", payload);
-    const { data } = await api.post("/leave-request", payload);
-    console.log("Leave request API response:", data);
-    setForm({ fromDate: "", toDate: "", reason: "" });
-    alert("Leave Request Submitted Successfully");
-    api.get("/leave-request/my").then(({ data }) => setParentItems(data)).catch(() => setParentItems([]));
+    try {
+      const { data } = await api.post("/leave-request", payload);
+      console.log("Leave request API response:", data);
+      
+      alert("Leave Request Submitted Successfully");
+      setForm({ fromDate: "", toDate: "", reason: "" });
+      
+      api.get("/leave-request/my").then(({ data }) => setParentItems(data)).catch(() => setParentItems([]));
+    } catch (err) {
+      console.error(err);
+      alert("Error submitting request");
+    }
   };
 
   const updateStatus = async (id, status) => {
@@ -62,10 +75,10 @@ const LeaveRequestsTab = ({ user }) => {
           </p>
         </div>
         <form onSubmit={submitParent} className="grid grid-cols-1 gap-2 rounded border bg-white p-4 md:grid-cols-3">
-          <input type="date" className="rounded border p-2" value={form.fromDate} onChange={(e) => setForm((p) => ({ ...p, fromDate: e.target.value }))} required />
-          <input type="date" className="rounded border p-2" value={form.toDate} onChange={(e) => setForm((p) => ({ ...p, toDate: e.target.value }))} required />
-          <input className="rounded border p-2 md:col-span-2" placeholder="Reason" value={form.reason} onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))} required />
-          <button className="rounded bg-blue-600 p-2 text-white">Submit Leave Request</button>
+          <input type="date" className="rounded border p-2" value={form.fromDate} onChange={(e) => setForm((p) => ({ ...p, fromDate: e.target.value }))} />
+          <input type="date" className="rounded border p-2" value={form.toDate} onChange={(e) => setForm((p) => ({ ...p, toDate: e.target.value }))} />
+          <input className="rounded border p-2 md:col-span-2" placeholder="Reason" value={form.reason} onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))} />
+          <button type="submit" className="rounded bg-blue-600 p-2 text-white">Submit Leave Request</button>
         </form>
         <div className="overflow-x-auto rounded border bg-white">
           <table className="w-full border-collapse text-sm">

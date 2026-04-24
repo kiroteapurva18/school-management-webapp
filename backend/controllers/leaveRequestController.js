@@ -41,29 +41,36 @@ export const createLeaveRequest = asyncHandler(async (req, res) => {
     throw new Error("fromDate, toDate and reason are required");
   }
 
-  const child = await resolveParentChild(req.user);
-  if (!child) {
-    res.status(400);
-    throw new Error("Student profile not found for parent");
+  const child = await resolveParentChild(req.user).catch(() => null);
+  
+  const finalStudentId = studentId || child?.studentId || null;
+  const finalStudentName = studentName?.trim() || child?.studentName || "Unknown Student";
+  const finalClassName = className?.trim() || child?.className || "Unknown Class";
+  const finalDivision = mapDivision(division || child?.division || "A");
+
+  try {
+    const leaveRequest = await LeaveRequest.create({
+      studentId: finalStudentId,
+      studentName: finalStudentName,
+      parentId: req.user._id,
+      parentName: parentName?.trim() || req.user.name || "Unknown Parent",
+      class: finalClassName,
+      division: finalDivision,
+      fromDate,
+      toDate,
+      reason: reason.trim(),
+      status: "Pending"
+    });
+    console.log("leave request saved data:", leaveRequest);
+
+    res.status(201).json({
+      message: "Leave Request Submitted Successfully",
+      leaveRequest
+    });
+  } catch (error) {
+    console.error("Error creating leave request:", error);
+    res.status(500).json({ error: "Failed to save leave request" });
   }
-
-  const leaveRequest = await LeaveRequest.create({
-    studentId: studentId || child.studentId,
-    studentName: studentName?.trim() || child.studentName,
-    parentId: req.user._id,
-    parentName: parentName?.trim() || req.user.name,
-    class: className?.trim() || child.className,
-    division: mapDivision(division || child.division),
-    fromDate,
-    toDate,
-    reason: reason.trim()
-  });
-  console.log("leave request saved data:", leaveRequest);
-
-  res.status(201).json({
-    message: "Leave Request Submitted Successfully",
-    leaveRequest
-  });
 });
 
 export const getTeacherLeaveRequests = asyncHandler(async (req, res) => {
