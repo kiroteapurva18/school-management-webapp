@@ -3,28 +3,50 @@ import api from "../../services/api";
 import { mapDivision } from "../../utils/division";
 import { DAYS } from "../../constants/timetable";
 
-const DEFAULT_SCHEDULE = [
-  { startTime: "10:00", endTime: "11:00", subject: "English" },
-  { startTime: "11:00", endTime: "12:00", subject: "Mathematics" },
-  { startTime: "12:00", endTime: "13:00", subject: "Science" },
-  { startTime: "13:00", endTime: "14:00", subject: "Lunch Break", teacherName: "-" },
-  { startTime: "14:00", endTime: "15:00", subject: "Social Studies" },
-  { startTime: "15:00", endTime: "16:00", subject: "Computer" },
-  { startTime: "16:00", endTime: "17:00", subject: "Hindi / Marathi" }
+const SUBJECT_TEACHER_MAP = {
+  History: "Mrs. Patil",
+  Marathi: "Mr. Wankhede",
+  PT: "Mr. Lanjulkar",
+  Hindi: "Mr. Bhumbre",
+  Geography: "Mrs. Satav",
+  English: "Mr. Thakre",
+  Science: "Mr. Manza",
+  Mathematics: "Mr. Verma",
+  "Social Studies": "Mrs. Satav",
+  Computer: "Mr. Manza",
+  "Hindi / Marathi": "Mr. Wankhede",
+  "Lunch Break": "-"
+};
+
+const WEEKLY_SCHEDULE = {
+  Monday: ["English", "Mathematics", "Science", "Lunch Break", "History", "Computer", "Hindi / Marathi"],
+  Tuesday: ["Mathematics", "English", "Geography", "Lunch Break", "Science", "PT", "Hindi / Marathi"],
+  Wednesday: ["Science", "English", "Mathematics", "Lunch Break", "Social Studies", "Computer", "Marathi"],
+  Thursday: ["English", "Science", "Geography", "Lunch Break", "Mathematics", "Hindi", "PT"],
+  Friday: ["Mathematics", "English", "Science", "Lunch Break", "History", "Computer", "Marathi"]
+};
+
+const TIME_SLOTS = [
+  { startTime: "10:00", endTime: "11:00" },
+  { startTime: "11:00", endTime: "12:00" },
+  { startTime: "12:00", endTime: "13:00" },
+  { startTime: "13:00", endTime: "14:00" },
+  { startTime: "14:00", endTime: "15:00" },
+  { startTime: "15:00", endTime: "16:00" },
+  { startTime: "16:00", endTime: "17:00" }
 ];
 
 const buildDefaultTimetable = (className, division) =>
-  DAYS.flatMap((day, dayIndex) =>
-    DEFAULT_SCHEDULE.map((slot, index) => {
-      const rotateIndex = (index + dayIndex) % DEFAULT_SCHEDULE.length;
-      const rotated = DEFAULT_SCHEDULE[rotateIndex];
+  DAYS.flatMap((day) =>
+    TIME_SLOTS.map((slot, index) => {
+      const subject = WEEKLY_SCHEDULE[day][index];
       return {
         _id: `default-${day}-${slot.startTime}`,
         day,
         startTime: slot.startTime,
         endTime: slot.endTime,
-        subject: slot.subject === "Lunch Break" ? "Lunch Break" : rotated.subject,
-        teacherName: slot.subject === "Lunch Break" ? "-" : "Assigned Teacher",
+        subject,
+        teacherName: SUBJECT_TEACHER_MAP[subject] || "Teacher",
         class: className || "N/A",
         division: division || "N/A",
         displayDivision: division || "N/A"
@@ -38,6 +60,14 @@ const TimetableTab = ({ user }) => {
   const [slotForm, setSlotForm] = useState({ id: "", subject: "", teacherId: "", substituteTeacherId: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const getTeacherName = (row) => {
+    const raw = row.teacherName?.trim();
+    if (!raw || raw === "Assigned Teacher") {
+      return SUBJECT_TEACHER_MAP[row.subject] || "Teacher";
+    }
+    return raw;
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -83,6 +113,21 @@ const TimetableTab = ({ user }) => {
   if (loading) return <p className="text-sm text-slate-600">Loading...</p>;
   if (error) return <p className="text-sm text-slate-600">{error}</p>;
 
+  const sortedRows = [...rows].sort((a, b) => {
+    const dayDiff = DAYS.indexOf(a.day) - DAYS.indexOf(b.day);
+    if (dayDiff !== 0) return dayDiff;
+    return a.startTime.localeCompare(b.startTime);
+  });
+  const grouped = DAYS.map((day) => ({
+    day,
+    rows: sortedRows.filter((row) => row.day === day)
+  })).filter((group) => group.rows.length > 0);
+
+  const classValues = [...new Set(sortedRows.map((row) => row.class).filter(Boolean))];
+  const divisionValues = [...new Set(sortedRows.map((row) => row.displayDivision || row.division).filter(Boolean))];
+  const classLabel = classValues.length === 1 ? classValues[0] : "Multiple";
+  const divisionLabel = divisionValues.length === 1 ? divisionValues[0] : "Multiple";
+
   return (
     <div className="space-y-3">
       {user?.role === "admin" && (
@@ -110,6 +155,9 @@ const TimetableTab = ({ user }) => {
           <button className="rounded bg-blue-600 p-2 text-white">Update Slot</button>
         </form>
       )}
+      <div className="rounded border bg-white px-4 py-2 text-sm text-slate-700">
+        Class: <span className="font-semibold">{classLabel}</span> | Division: <span className="font-semibold">{divisionLabel}</span>
+      </div>
       <div className="overflow-x-auto rounded border bg-white">
         <table className="w-full border-collapse text-sm">
         <thead>
@@ -118,21 +166,25 @@ const TimetableTab = ({ user }) => {
             <th className="border p-2 text-left">Time</th>
             <th className="border p-2 text-left">Subject</th>
             <th className="border p-2 text-left">Teacher</th>
-            <th className="border p-2 text-left">Class</th>
-            <th className="border p-2 text-left">Division</th>
           </tr>
         </thead>
         <tbody>
-          {[...rows].sort((a, b) => `${a.day}${a.startTime}`.localeCompare(`${b.day}${b.startTime}`)).map((row) => (
-            <tr key={row._id}>
-              <td className="border p-2">{row.day}</td>
-              <td className={`border p-2 ${row.startTime === "13:00" && row.endTime === "14:00" ? "bg-amber-100 font-semibold" : ""}`}>{row.startTime} - {row.endTime}</td>
-              <td className="border p-2">{row.subject || "N/A"}</td>
-              <td className="border p-2">{row.teacherName || "Teacher"}</td>
-              <td className="border p-2">{row.class}</td>
-              <td className="border p-2">{row.displayDivision || row.division}</td>
-            </tr>
-          ))}
+          {grouped.map((group) =>
+            group.rows.map((row, index) => (
+              <tr key={row._id}>
+                {index === 0 && (
+                  <td rowSpan={group.rows.length} className="border p-2 align-top font-semibold">
+                    {group.day}
+                  </td>
+                )}
+                <td className={`border p-2 ${row.startTime === "13:00" && row.endTime === "14:00" ? "bg-amber-100 font-semibold" : ""}`}>
+                  {row.startTime} - {row.endTime}
+                </td>
+                <td className={`border p-2 ${row.subject === "Lunch Break" ? "bg-amber-100 font-semibold" : ""}`}>{row.subject || "N/A"}</td>
+                <td className="border p-2">{getTeacherName(row)}</td>
+              </tr>
+            ))
+          )}
         </tbody>
         </table>
       </div>
