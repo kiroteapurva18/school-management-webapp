@@ -23,7 +23,20 @@ const LeaveRequestsTab = ({ user }) => {
 
   const submitParent = async (e) => {
     e.preventDefault();
-    await api.post("/leave-request", form);
+    const payload = {
+      studentId: user?.studentId,
+      studentName: user?.studentName,
+      parentId: user?.id,
+      parentName: user?.parentDisplayName,
+      class: user?.childClass,
+      division: user?.childDivision,
+      fromDate: form.fromDate,
+      toDate: form.toDate,
+      reason: form.reason
+    };
+    console.log("Leave request frontend payload:", payload);
+    const { data } = await api.post("/leave-request", payload);
+    console.log("Leave request API response:", data);
     setForm({ fromDate: "", toDate: "", reason: "" });
     alert("Leave Request Submitted Successfully");
     api.get("/leave-request/my").then(({ data }) => setParentItems(data)).catch(() => setParentItems([]));

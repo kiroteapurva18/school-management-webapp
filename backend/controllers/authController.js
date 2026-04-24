@@ -105,6 +105,7 @@ export const getMe = asyncHandler(async (req, res) => {
   let className = req.user.className;
   let division = req.user.division;
   let studentName = null;
+  let studentId = null;
   let rollNumber = null;
   let childClass = req.user.childClass;
   let childDivision = req.user.childDivision;
@@ -116,6 +117,7 @@ export const getMe = asyncHandler(async (req, res) => {
       className = match[1];
       division = match[2].toUpperCase();
     }
+    studentId = student?._id || null;
     studentName = student?.name || req.user.name;
     rollNumber = student?.rollNumber ?? null;
   }
@@ -134,6 +136,7 @@ export const getMe = asyncHandler(async (req, res) => {
     ]).select("name class rollNumber");
 
     if (linkedStudent) {
+      studentId = linkedStudent._id;
       studentName = linkedStudent.name;
       rollNumber = linkedStudent.rollNumber ?? null;
       const match = linkedStudent.class?.trim()?.match(/^(\d+)\s*[-]?\s*([A-D])$/i);
@@ -166,6 +169,7 @@ export const getMe = asyncHandler(async (req, res) => {
     division,
     childClass,
     childDivision,
+    studentId,
     studentName,
     rollNumber,
     parentDisplayName

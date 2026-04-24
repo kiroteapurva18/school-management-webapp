@@ -34,7 +34,8 @@ const resolveParentChild = async (user) => {
 };
 
 export const createLeaveRequest = asyncHandler(async (req, res) => {
-  const { fromDate, toDate, reason } = req.body;
+  const { fromDate, toDate, reason, studentId, studentName, class: className, division } = req.body;
+  console.log("leave request payload:", req.body);
   if (!fromDate || !toDate || !reason) {
     res.status(400);
     throw new Error("fromDate, toDate and reason are required");
@@ -47,17 +48,20 @@ export const createLeaveRequest = asyncHandler(async (req, res) => {
   }
 
   const leaveRequest = await LeaveRequest.create({
-    studentId: child.studentId,
-    studentName: child.studentName || req.body.studentName?.trim(),
+    studentId: studentId || child.studentId,
+    studentName: studentName?.trim() || child.studentName,
     parentId: req.user._id,
-    class: child.className,
-    division: child.division,
+    class: className?.trim() || child.className,
+    division: mapDivision(division || child.division),
     fromDate,
     toDate,
     reason: reason.trim()
   });
 
-  res.status(201).json(leaveRequest);
+  res.status(201).json({
+    message: "Leave Request Submitted Successfully",
+    leaveRequest
+  });
 });
 
 export const getTeacherLeaveRequests = asyncHandler(async (req, res) => {

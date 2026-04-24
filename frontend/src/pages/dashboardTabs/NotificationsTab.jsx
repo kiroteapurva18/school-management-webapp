@@ -9,6 +9,7 @@ const NotificationsTab = ({ user }) => {
   const fetchData = async () => {
     setLoading(true);
     const { data } = await api.get("/notifications");
+    console.log("Notifications API response:", data);
     setItems(data);
     setLoading(false);
   };
@@ -23,6 +24,12 @@ const NotificationsTab = ({ user }) => {
     await api.post("/notifications", form);
     setForm({ title: "", message: "", type: "holiday", holidayDate: "", class: "", division: "" });
     fetchData();
+  };
+
+  const remove = async (id) => {
+    const { data } = await api.delete(`/notifications/${id}`);
+    setItems((prev) => prev.filter((item) => item._id !== id));
+    alert(data.message || "Notification deleted successfully");
   };
 
   return (
@@ -50,7 +57,14 @@ const NotificationsTab = ({ user }) => {
                 <span className="rounded bg-slate-100 px-2 py-0.5 text-xs uppercase">{n.type}</span>
               </div>
               <p className="text-sm text-slate-700">{n.message}</p>
-              <p className="text-xs text-slate-500">{new Date(n.createdAt).toLocaleString()}</p>
+              <div className="mt-1 flex items-center justify-between">
+                <p className="text-xs text-slate-500">{new Date(n.createdAt).toLocaleString()}</p>
+                {canCreate && (
+                  <button onClick={() => remove(n._id)} className="rounded bg-red-600 px-2 py-1 text-xs text-white">
+                    Delete
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
