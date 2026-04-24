@@ -26,7 +26,9 @@ const timetableSchema = new mongoose.Schema(
     endTime: { type: String, required: true, trim: true },
     subject: { type: String, required: true, trim: true },
     teacherName: { type: String, required: true, trim: true },
-    teacherId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
+    teacherId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    substituteTeacherId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    substituteTeacherName: { type: String, trim: true }
   },
   { timestamps: true }
 );

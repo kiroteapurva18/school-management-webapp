@@ -42,6 +42,29 @@ const normalizePayload = (body) => ({
   endTime: body.endTime?.trim()
 });
 
+const hydrateTeacherNames = async (rows) => {
+  const ids = new Set();
+  rows.forEach((row) => {
+    if (!row.teacherName && row.teacherId) ids.add(String(row.teacherId));
+    if (!row.substituteTeacherName && row.substituteTeacherId) ids.add(String(row.substituteTeacherId));
+  });
+  if (!ids.size) return rows;
+
+  const users = await User.find({ _id: { $in: [...ids] } }).select("name");
+  const userMap = new Map(users.map((user) => [String(user._id), user.name]));
+  return rows.map((row) => ({
+    ...row,
+    teacherName: row.teacherName || userMap.get(String(row.teacherId)) || "Teacher",
+    substituteTeacherName:
+      row.substituteTeacherName || (row.substituteTeacherId ? userMap.get(String(row.substituteTeacherId)) : undefined)
+  }));
+};
+
+const toViewRow = (row) => ({
+  ...row,
+  teacherName: row.substituteTeacherName || row.teacherName || "Teacher"
+});
+
 const resolveStudentProfile = async (req) => {
   if (req.user.className && req.user.division) {
     return { className: req.user.className, division: req.user.division?.toUpperCase() };
@@ -217,7 +240,8 @@ export const getClassTimetable = asyncHandler(async (req, res) => {
   const records = await Timetable.find({ class: className, division })
     .sort({ day: 1, startTime: 1 })
     .lean();
-  res.json(records.map((row) => ({ ...row, displayDivision: requestedDivision })));
+  const hydrated = await hydrateTeacherNames(records);
+  res.json(hydrated.map((row) => ({ ...toViewRow(row), displayDivision: requestedDivision })));
 });
 
 export const getTeacherTimetable = asyncHandler(async (req, res) => {
@@ -228,12 +252,15 @@ export const getTeacherTimetable = asyncHandler(async (req, res) => {
     throw new Error("Teachers can only view their own timetable");
   }
 
-  const records = await Timetable.find({ teacherId })
+  const records = await Timetable.find({
+    $or: [{ teacherId }, { substituteTeacherId: teacherId }]
+  })
     .sort({ day: 1, startTime: 1 })
     .lean();
-  const expanded = records.flatMap((row) =>
+  const hydrated = await hydrateTeacherNames(records);
+  const expanded = hydrated.flatMap((row) =>
     getMappedDisplayDivisions(row.division).map((division) => ({
-      ...row,
+      ...toViewRow(row),
       displayDivision: division
     }))
   );
@@ -270,8 +297,8 @@ export const getTimetableByDay = asyncHandler(async (req, res) => {
   const records = await Timetable.find(query)
     .sort({ class: 1, division: 1, startTime: 1 })
     .lean();
-
-  res.json(records);
+  const hydrated = await hydrateTeacherNames(records);
+  res.json(hydrated.map((row) => toViewRow(row)));
 });
 
 export const getStudentTimetable = asyncHandler(async (req, res) => {
@@ -304,6 +331,7 @@ export const getStudentTimetable = asyncHandler(async (req, res) => {
   })
     .sort({ day: 1, startTime: 1 })
     .lean();
+  const hydrated = await hydrateTeacherNames(timetable);
 
   res.json({
     student: {
@@ -312,11 +340,45 @@ export const getStudentTimetable = asyncHandler(async (req, res) => {
       division: requestedDivision,
       mappedDivision
     },
-    timetable: timetable.map((row) => ({ ...row, displayDivision: requestedDivision }))
+    timetable: hydrated.map((row) => ({ ...toViewRow(row), displayDivision: requestedDivision }))
   });
 });
 
 export const getTeacherUsers = asyncHandler(async (req, res) => {
   const teachers = await User.find({ role: "teacher" }).select("name email role").sort({ name: 1 });
   res.json(teachers);
+});
+
+export const updateTimetableSlot = asyncHandler(async (req, res) => {
+  const { id, subject, teacherId, substituteTeacherId } = req.body;
+  if (!id) {
+    res.status(400);
+    throw new Error("id is required");
+  }
+
+  const payload = {};
+  if (subject) payload.subject = subject.trim();
+  if (teacherId) {
+    payload.teacherId = teacherId;
+    const teacher = await User.findById(teacherId).select("name");
+    payload.teacherName = teacher?.name || "Teacher";
+  }
+  if (substituteTeacherId !== undefined) {
+    payload.substituteTeacherId = substituteTeacherId || undefined;
+    if (substituteTeacherId) {
+      const substitute = await User.findById(substituteTeacherId).select("name");
+      payload.substituteTeacherName = substitute?.name || "Substitute";
+    } else {
+      payload.substituteTeacherName = undefined;
+    }
+  }
+
+  const updated = await Timetable.findByIdAndUpdate(id, payload, { new: true, runValidators: true }).lean();
+  if (!updated) {
+    res.status(404);
+    throw new Error("Timetable slot not found");
+  }
+
+  const [row] = await hydrateTeacherNames([updated]);
+  res.json(toViewRow(row));
 });
