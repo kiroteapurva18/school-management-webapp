@@ -11,6 +11,10 @@ import StudentsPage from "./pages/StudentsPage";
 import TeachersPage from "./pages/TeachersPage";
 import TeacherTimetablePage from "./pages/TeacherTimetablePage";
 import TimetablePage from "./pages/TimetablePage";
+import NotificationsPage from "./pages/NotificationsPage";
+import LeaveRequestsPage from "./pages/LeaveRequestsPage";
+import ResultsPage from "./pages/ResultsPage";
+import FeesPage from "./pages/FeesPage";
 
 const App = () => {
   const { isAuthenticated } = useAuth();
@@ -75,6 +79,38 @@ const App = () => {
             element={
               <ProtectedRoute allowedRoles={["teacher"]}>
                 <TeacherTimetablePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute allowedRoles={["admin", "student", "parent"]}>
+                <NotificationsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/leave-requests"
+            element={
+              <ProtectedRoute allowedRoles={["parent", "teacher", "admin"]}>
+                <LeaveRequestsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/results"
+            element={
+              <ProtectedRoute allowedRoles={["parent", "teacher", "student"]}>
+                <ResultsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/fees"
+            element={
+              <ProtectedRoute allowedRoles={["parent", "admin", "student"]}>
+                <FeesPage />
               </ProtectedRoute>
             }
           />

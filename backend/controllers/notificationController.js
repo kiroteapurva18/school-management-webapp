@@ -8,21 +8,13 @@ export const createNotification = asyncHandler(async (req, res) => {
     res.status(400);
     throw new Error("title, message and type are required");
   }
-  if (!["homework", "holiday", "general"].includes(type)) {
+  if (!["holiday", "general"].includes(type)) {
     res.status(400);
     throw new Error("Invalid notification type");
   }
-  if (type === "homework" && (!className || !division)) {
-    res.status(400);
-    throw new Error("Homework notification needs class and division");
-  }
-  if (type === "holiday" && req.user.role !== "admin") {
+  if (req.user.role !== "admin") {
     res.status(403);
-    throw new Error("Only admin can create holiday notifications");
-  }
-  if (type === "homework" && req.user.role !== "teacher") {
-    res.status(403);
-    throw new Error("Only teachers can create homework notifications");
+    throw new Error("Only admin can create notifications");
   }
 
   const notification = await Notification.create({
@@ -42,16 +34,16 @@ export const getNotifications = asyncHandler(async (req, res) => {
   const query = {};
   if (req.user.role === "student") {
     query.$or = [
-      { type: { $in: ["holiday", "general"] } },
+      { class: { $exists: false }, division: { $exists: false } },
       { class: req.user.className, division: mapDivision(req.user.division) }
     ];
+    query.type = { $in: ["holiday", "general"] };
   } else if (req.user.role === "parent") {
     query.$or = [
-      { type: { $in: ["holiday", "general"] } },
+      { class: { $exists: false }, division: { $exists: false } },
       { class: req.user.childClass, division: mapDivision(req.user.childDivision) }
     ];
-  } else if (req.user.role === "teacher") {
-    query.$or = [{ createdBy: req.user._id }, { type: { $in: ["holiday", "general"] } }];
+    query.type = { $in: ["holiday", "general"] };
   }
 
   const notifications = await Notification.find(query)

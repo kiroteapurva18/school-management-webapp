@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.use(protect);
 
-router.post("/", allowRoles("teacher", "admin"), createNotification);
-router.get("/", allowRoles("student", "parent", "teacher", "admin"), getNotifications);
+router.post("/", allowRoles("admin"), createNotification);
+router.get("/", allowRoles("student", "parent", "admin"), getNotifications);
 
 export default router;

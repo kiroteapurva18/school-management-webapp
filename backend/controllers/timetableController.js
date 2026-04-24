@@ -62,7 +62,10 @@ const hydrateTeacherNames = async (rows) => {
 
 const toViewRow = (row) => ({
   ...row,
-  teacherName: row.substituteTeacherName || row.teacherName || "Teacher"
+  subject: row.subject || "N/A",
+  teacherName: row.substituteTeacherName || row.teacherName || "Teacher",
+  class: row.class || "",
+  division: row.division || ""
 });
 
 const resolveStudentProfile = async (req) => {

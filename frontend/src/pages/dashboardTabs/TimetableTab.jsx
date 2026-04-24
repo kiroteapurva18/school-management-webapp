@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../../services/api";
-import { DAYS, TIME_SLOTS } from "../../constants/timetable";
 import { mapDivision } from "../../utils/division";
 
 const TimetableTab = ({ user }) => {
@@ -47,17 +46,6 @@ const TimetableTab = ({ user }) => {
     loadData();
   }, [user]);
 
-  const normalized = useMemo(() => {
-    const map = {};
-    rows.forEach((row) => {
-      const day = row.day;
-      const key = `${row.startTime}-${row.endTime}`;
-      if (!map[day]) map[day] = {};
-      map[day][key] = row;
-    });
-    return map;
-  }, [rows]);
-
   if (loading) return <p className="text-sm text-slate-600">Loading...</p>;
   if (error) return <p className="text-sm text-slate-600">{error}</p>;
   if (!rows.length) return <p className="text-sm text-slate-600">No timetable available</p>;
@@ -94,38 +82,22 @@ const TimetableTab = ({ user }) => {
         <thead>
           <tr className="bg-slate-100">
             <th className="border p-2 text-left">Day</th>
-            {TIME_SLOTS.map((slot) => (
-              <th key={`${slot.startTime}-${slot.endTime}`} className={`border p-2 text-left ${slot.isLunch ? "bg-amber-100" : ""}`}>
-                {slot.startTime}-{slot.endTime}
-              </th>
-            ))}
+            <th className="border p-2 text-left">Time</th>
+            <th className="border p-2 text-left">Subject</th>
+            <th className="border p-2 text-left">Teacher</th>
+            <th className="border p-2 text-left">Class</th>
+            <th className="border p-2 text-left">Division</th>
           </tr>
         </thead>
         <tbody>
-          {DAYS.map((day) => (
-            <tr key={day}>
-              <td className="border p-2 font-semibold">{day}</td>
-              {TIME_SLOTS.map((slot) => {
-                const key = `${slot.startTime}-${slot.endTime}`;
-                const row = normalized[day]?.[key];
-                return (
-                  <td key={`${day}-${key}`} className="border p-2 align-top">
-                    {slot.isLunch ? (
-                      <span className="rounded bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-800">Lunch Break</span>
-                    ) : row ? (
-                      <>
-                        <p className="font-medium">{row.subject}</p>
-                        <p className="text-xs text-slate-600">{row.teacherName || "Teacher"}</p>
-                        {user?.role === "teacher" && (
-                          <p className="text-xs text-slate-500">Class {row.class}-{row.displayDivision || row.division}</p>
-                        )}
-                      </>
-                    ) : (
-                      <span className="text-slate-300">-</span>
-                    )}
-                  </td>
-                );
-              })}
+          {[...rows].sort((a, b) => `${a.day}${a.startTime}`.localeCompare(`${b.day}${b.startTime}`)).map((row) => (
+            <tr key={row._id}>
+              <td className="border p-2">{row.day}</td>
+              <td className={`border p-2 ${row.startTime === "13:00" && row.endTime === "14:00" ? "bg-amber-100 font-semibold" : ""}`}>{row.startTime} - {row.endTime}</td>
+              <td className="border p-2">{row.subject || "N/A"}</td>
+              <td className="border p-2">{row.teacherName || "Teacher"}</td>
+              <td className="border p-2">{row.class}</td>
+              <td className="border p-2">{row.displayDivision || row.division}</td>
             </tr>
           ))}
         </tbody>
