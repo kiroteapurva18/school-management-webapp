@@ -104,13 +104,43 @@ export const login = asyncHandler(async (req, res) => {
 export const getMe = asyncHandler(async (req, res) => {
   let className = req.user.className;
   let division = req.user.division;
+  let studentName = null;
+  let rollNumber = null;
+  let childClass = req.user.childClass;
+  let childDivision = req.user.childDivision;
 
   if (req.user.role === "student" && (!className || !division)) {
-    const student = await Student.findOne({ email: req.user.email }).select("class");
+    const student = await Student.findOne({ email: req.user.email }).select("class name rollNumber");
     const match = student?.class?.trim()?.match(/^(\d+)\s*[-]?\s*([A-D])$/i);
     if (match) {
       className = match[1];
       division = match[2].toUpperCase();
+    }
+    studentName = student?.name || req.user.name;
+    rollNumber = student?.rollNumber ?? null;
+  }
+
+  if (req.user.role === "student" && (className || division) && !studentName) {
+    const student = await Student.findOne({ email: req.user.email }).select("name rollNumber");
+    studentName = student?.name || req.user.name;
+    rollNumber = student?.rollNumber ?? null;
+  }
+
+  if (req.user.role === "parent") {
+    const parentPrefix = req.user.email.split("@")[0]?.toLowerCase();
+    const linkedStudent = await Student.findOne().or([
+      { email: new RegExp(`^${parentPrefix}@`, "i") },
+      { email: new RegExp(`^${parentPrefix}@student\\.com$`, "i") }
+    ]).select("name class rollNumber");
+
+    if (linkedStudent) {
+      studentName = linkedStudent.name;
+      rollNumber = linkedStudent.rollNumber ?? null;
+      const match = linkedStudent.class?.trim()?.match(/^(\d+)\s*[-]?\s*([A-D])$/i);
+      if (match) {
+        childClass = match[1];
+        childDivision = match[2].toUpperCase();
+      }
     }
   }
 
@@ -121,7 +151,10 @@ export const getMe = asyncHandler(async (req, res) => {
     role: req.user.role,
     className,
     division,
-    childClass: req.user.childClass,
-    childDivision: req.user.childDivision
+    childClass,
+    childDivision,
+    studentName,
+    rollNumber,
+    parentDisplayName: studentName ? `${studentName} Parents` : "Parent Dashboard"
   });
 });

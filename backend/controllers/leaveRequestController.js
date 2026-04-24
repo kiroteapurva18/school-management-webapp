@@ -4,6 +4,20 @@ import asyncHandler from "../utils/asyncHandler.js";
 import { mapDivision } from "../utils/division.js";
 
 const resolveParentChild = async (user) => {
+  const prefix = user.email?.split("@")[0]?.toLowerCase();
+  const linkedByPrefix = prefix
+    ? await Student.findOne({ email: new RegExp(`^${prefix}@`, "i") }).sort({ createdAt: -1 })
+    : null;
+  if (linkedByPrefix) {
+    const match = linkedByPrefix.class?.trim()?.match(/^(\d+)\s*[-]?\s*([A-D])$/i);
+    return {
+      studentId: linkedByPrefix._id,
+      studentName: linkedByPrefix.name,
+      className: match?.[1] || user.childClass || "",
+      division: mapDivision(match?.[2] || user.childDivision || "A")
+    };
+  }
+
   if (user.childClass && user.childDivision) {
     const mappedDivision = mapDivision(user.childDivision);
     const match = await Student.findOne({
@@ -16,17 +30,7 @@ const resolveParentChild = async (user) => {
       division: mappedDivision
     };
   }
-
-  const byEmail = await Student.findOne({ email: user.email }).sort({ createdAt: -1 });
-  if (!byEmail) return null;
-  const match = byEmail.class?.trim()?.match(/^(\d+)\s*[-]?\s*([A-D])$/i);
-  if (!match) return null;
-  return {
-    studentId: byEmail._id,
-    studentName: byEmail.name,
-    className: match[1],
-    division: mapDivision(match[2])
-  };
+  return null;
 };
 
 export const createLeaveRequest = asyncHandler(async (req, res) => {

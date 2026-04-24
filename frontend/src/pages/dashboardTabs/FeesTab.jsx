@@ -29,7 +29,9 @@ const FeesTab = ({ user }) => {
             <p>Exam Fees: Rs {fee.examFees}</p>
             <p>Pending Fees: Rs {fee.pendingFees}</p>
             <p className="font-semibold">Total Due: Rs {fee.totalDue}</p>
-            <p className={`mt-1 inline-block rounded px-2 py-1 text-xs ${fee.status === "Paid" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{fee.status}</p>
+            <p className={`mt-1 inline-block rounded px-2 py-1 text-xs ${Number(fee.pendingFees) === 0 ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+              {Number(fee.pendingFees) === 0 ? "Fees Clear" : "Pending"}
+            </p>
           </div>
         )
       )}

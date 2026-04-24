@@ -14,7 +14,7 @@ const LeaveRequestsTab = ({ user }) => {
   };
 
   useEffect(() => {
-    if (user?.role === "teacher" || user?.role === "admin") fetchTeacherItems().catch(() => setLoading(false));
+    if (user?.role === "teacher") fetchTeacherItems().catch(() => setLoading(false));
   }, [user?.role]);
 
   const submitParent = async (e) => {
@@ -30,12 +30,18 @@ const LeaveRequestsTab = ({ user }) => {
 
   if (user?.role === "parent") {
     return (
-      <form onSubmit={submitParent} className="grid grid-cols-1 gap-2 rounded border bg-white p-4 md:grid-cols-3">
-        <input type="date" className="rounded border p-2" value={form.fromDate} onChange={(e) => setForm((p) => ({ ...p, fromDate: e.target.value }))} required />
-        <input type="date" className="rounded border p-2" value={form.toDate} onChange={(e) => setForm((p) => ({ ...p, toDate: e.target.value }))} required />
-        <input className="rounded border p-2 md:col-span-2" placeholder="Reason" value={form.reason} onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))} required />
-        <button className="rounded bg-blue-600 p-2 text-white">Submit Leave Request</button>
-      </form>
+      <div className="space-y-3">
+        <div className="rounded border bg-white p-4">
+          <h3 className="text-lg font-semibold">Welcome, {user?.parentDisplayName || "Parent Dashboard"}</h3>
+          <p className="text-sm text-slate-600">Student: {user?.studentName || "N/A"} | Class: {user?.childClass || "N/A"} | Division: {user?.childDivision || "N/A"}</p>
+        </div>
+        <form onSubmit={submitParent} className="grid grid-cols-1 gap-2 rounded border bg-white p-4 md:grid-cols-3">
+          <input type="date" className="rounded border p-2" value={form.fromDate} onChange={(e) => setForm((p) => ({ ...p, fromDate: e.target.value }))} required />
+          <input type="date" className="rounded border p-2" value={form.toDate} onChange={(e) => setForm((p) => ({ ...p, toDate: e.target.value }))} required />
+          <input className="rounded border p-2 md:col-span-2" placeholder="Reason" value={form.reason} onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))} required />
+          <button className="rounded bg-blue-600 p-2 text-white">Submit Leave Request</button>
+        </form>
+      </div>
     );
   }
 
@@ -57,7 +63,11 @@ const LeaveRequestsTab = ({ user }) => {
               <td className="border p-2">{r.class}-{r.division}</td>
               <td className="border p-2">{new Date(r.fromDate).toLocaleDateString()} - {new Date(r.toDate).toLocaleDateString()}</td>
               <td className="border p-2">{r.reason}</td>
-              <td className="border p-2">{r.status}</td>
+              <td className="border p-2">
+                <span className={`rounded px-2 py-1 text-xs ${r.status === "Approved" ? "bg-emerald-100 text-emerald-700" : r.status === "Rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
+                  {r.status}
+                </span>
+              </td>
               <td className="border p-2">
                 <div className="flex gap-2">
                   <button onClick={() => updateStatus(r._id, "Approved")} className="rounded bg-emerald-600 px-2 py-1 text-white">Approve</button>
