@@ -144,6 +144,19 @@ export const getMe = asyncHandler(async (req, res) => {
     }
   }
 
+  const parentFirstName = studentName?.split(" ")?.[0];
+  const parentDisplayName = parentFirstName ? `${parentFirstName}'s Parents` : "Parent Dashboard";
+  console.log("getMe user object:", {
+    id: req.user._id,
+    role: req.user.role,
+    email: req.user.email,
+    className,
+    division,
+    childClass,
+    childDivision
+  });
+  console.log("getMe student object:", { studentName, rollNumber });
+
   res.json({
     id: req.user._id,
     name: req.user.name,
@@ -155,6 +168,6 @@ export const getMe = asyncHandler(async (req, res) => {
     childDivision,
     studentName,
     rollNumber,
-    parentDisplayName: studentName ? `${studentName} Parents` : "Parent Dashboard"
+    parentDisplayName
   });
 });

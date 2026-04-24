@@ -33,7 +33,11 @@ const LeaveRequestsTab = ({ user }) => {
       <div className="space-y-3">
         <div className="rounded border bg-white p-4">
           <h3 className="text-lg font-semibold">Welcome, {user?.parentDisplayName || "Parent Dashboard"}</h3>
-          <p className="text-sm text-slate-600">Student: {user?.studentName || "N/A"} | Class: {user?.childClass || "N/A"} | Division: {user?.childDivision || "N/A"}</p>
+          <p className="text-sm text-slate-600">
+            Student: {user?.studentName || "Loading student details..."}
+            {user?.childClass ? ` | Class: ${user.childClass}` : ""}
+            {user?.childDivision ? ` | Division: ${user.childDivision}` : ""}
+          </p>
         </div>
         <form onSubmit={submitParent} className="grid grid-cols-1 gap-2 rounded border bg-white p-4 md:grid-cols-3">
           <input type="date" className="rounded border p-2" value={form.fromDate} onChange={(e) => setForm((p) => ({ ...p, fromDate: e.target.value }))} required />

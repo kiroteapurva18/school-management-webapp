@@ -46,7 +46,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await api.post("/auth/login", { email, password });
       localStorage.setItem("token", data.token);
-      setUser(data.user);
+      const me = await api.get("/auth/me");
+      console.log("Auth /me API response:", me.data);
+      setUser(me.data);
       return { success: true };
     } catch (error) {
       return {
@@ -63,7 +65,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const { data } = await api.post("/auth/register", payload);
       localStorage.setItem("token", data.token);
-      setUser(data.user);
+      const me = await api.get("/auth/me");
+      console.log("Auth /me API response:", me.data);
+      setUser(me.data);
       return { success: true };
     } catch (error) {
       return {
