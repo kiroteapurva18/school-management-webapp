@@ -26,7 +26,10 @@ const TeacherTimetablePage = () => {
     api
       .get("/timetable/teacher")
       .then((response) => setRecords(response.data))
-      .catch((err) => setError(err.response?.data?.message || "Failed to load teacher timetable"))
+      .catch(() => {
+        setError("No timetable available");
+        setRecords([]);
+      })
       .finally(() => setLoading(false));
   }, [user?.id]);
 
@@ -37,7 +40,7 @@ const TeacherTimetablePage = () => {
         .sort((a, b) => toMinutes(a.startTime) - toMinutes(b.startTime))
         .map((row) => ({
           ...row,
-          classTag: `${row.class}${row.division}`
+          classTag: `${row.class}${row.displayDivision || row.division}`
         })),
     [records, selectedDay]
   );
@@ -61,11 +64,11 @@ const TeacherTimetablePage = () => {
             ))}
           </select>
         </div>
-        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        {error && <p className="mt-2 text-sm text-slate-600">{error}</p>}
         {loading ? (
           <p className="mt-3 text-slate-600">Loading...</p>
         ) : !todaysPeriods.length ? (
-          <p className="mt-3 text-slate-600">No lectures scheduled for today.</p>
+          <p className="mt-3 text-slate-600">No timetable available</p>
         ) : (
           <div className="mt-4 space-y-2">
             {todaysPeriods.map((period) => {

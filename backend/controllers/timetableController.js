@@ -2,6 +2,7 @@ import Timetable, { DAYS, DIVISIONS, SCHOOL_CLASSES } from "../models/Timetable.
 import asyncHandler from "../utils/asyncHandler.js";
 import User from "../models/User.js";
 import Student from "../models/Student.js";
+import { ALLOWED_DIVISIONS, getMappedDisplayDivisions, mapDivision, STORED_DIVISIONS } from "../utils/division.js";
 
 const TIME_PATTERN = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -31,9 +32,11 @@ const validateSchoolHours = (startTime, endTime) => {
 
 const normalizePayload = (body) => ({
   class: body.class?.trim(),
-  division: body.division?.trim()?.toUpperCase(),
+  division: mapDivision(body.division),
+  mappedDivision: body.division?.trim()?.toUpperCase(),
   day: body.day?.trim(),
   subject: body.subject?.trim(),
+  teacherName: body.teacherName?.trim(),
   teacherId: body.teacherId,
   startTime: body.startTime?.trim(),
   endTime: body.endTime?.trim()
@@ -41,7 +44,7 @@ const normalizePayload = (body) => ({
 
 const resolveStudentProfile = async (req) => {
   if (req.user.className && req.user.division) {
-    return { className: req.user.className, division: req.user.division };
+    return { className: req.user.className, division: req.user.division?.toUpperCase() };
   }
   const student = await Student.findOne({ email: req.user.email }).select("class");
   if (!student?.class) return null;
@@ -53,7 +56,7 @@ const resolveStudentProfile = async (req) => {
 
 const resolveParentProfile = (req) => {
   if (req.user.childClass && req.user.childDivision) {
-    return { className: req.user.childClass, division: req.user.childDivision };
+    return { className: req.user.childClass, division: req.user.childDivision?.toUpperCase() };
   }
   return null;
 };
@@ -64,7 +67,7 @@ const enforceStudentParentScope = async (req, className, division) => {
     if (!profile) {
       return "Student profile is missing class/division";
     }
-    if (profile.className !== className || profile.division !== division) {
+    if (profile.className !== className || mapDivision(profile.division) !== mapDivision(division)) {
       return "Students can view only their class timetable";
     }
   }
@@ -74,7 +77,7 @@ const enforceStudentParentScope = async (req, className, division) => {
     if (!profile) {
       return "Parent profile is missing childClass/childDivision";
     }
-    if (profile.className !== className || profile.division !== division) {
+    if (profile.className !== className || mapDivision(profile.division) !== mapDivision(division)) {
       return "Parents can view only their child's class timetable";
     }
   }
@@ -83,6 +86,33 @@ const enforceStudentParentScope = async (req, className, division) => {
 };
 
 const hasOverlap = (startA, endA, startB, endB) => startA < endB && endA > startB;
+
+const validateSubjectRotation = (entries) => {
+  const grouped = entries.reduce((acc, entry) => {
+    const key = `${entry.class}-${entry.division}`;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(entry);
+    return acc;
+  }, {});
+
+  for (const timetableEntries of Object.values(grouped)) {
+    timetableEntries.sort((a, b) => {
+      const dayDiff = DAYS.indexOf(a.day) - DAYS.indexOf(b.day);
+      if (dayDiff !== 0) return dayDiff;
+      return toMinutes(a.startTime) - toMinutes(b.startTime);
+    });
+    let streak = 1;
+    for (let i = 1; i < timetableEntries.length; i += 1) {
+      if (timetableEntries[i].subject === timetableEntries[i - 1].subject) {
+        streak += 1;
+        if (streak > 2) return "Subject cannot repeat continuously more than 2 times";
+      } else {
+        streak = 1;
+      }
+    }
+  }
+  return null;
+};
 
 const validateConflicts = async (payload, excludeId = null) => {
   const start = toMinutes(payload.startTime);
@@ -117,15 +147,20 @@ const validateConflicts = async (payload, excludeId = null) => {
 
 export const createOrUpdateTimetable = asyncHandler(async (req, res) => {
   const entries = Array.isArray(req.body.entries) ? req.body.entries : [req.body];
+  const normalizedEntries = entries.map((rawEntry) => normalizePayload(rawEntry));
+  const subjectRotationError = validateSubjectRotation(normalizedEntries);
+  if (subjectRotationError) {
+    res.status(400);
+    throw new Error(subjectRotationError);
+  }
   const created = [];
 
-  for (const rawEntry of entries) {
-    const payload = normalizePayload(rawEntry);
+  for (const payload of normalizedEntries) {
     if (!SCHOOL_CLASSES.includes(payload.class)) {
       res.status(400);
       throw new Error("Invalid class value");
     }
-    if (!DIVISIONS.includes(payload.division)) {
+    if (!STORED_DIVISIONS.includes(payload.division)) {
       res.status(400);
       throw new Error("Invalid division value");
     }
@@ -133,9 +168,17 @@ export const createOrUpdateTimetable = asyncHandler(async (req, res) => {
       res.status(400);
       throw new Error("Invalid day value");
     }
-    if (!payload.subject || !payload.teacherId || !payload.startTime || !payload.endTime) {
+    if (!payload.subject || !payload.startTime || !payload.endTime) {
       res.status(400);
-      throw new Error("subject, teacherId, startTime and endTime are required");
+      throw new Error("subject, startTime and endTime are required");
+    }
+    if (!payload.teacherName && payload.teacherId) {
+      const teacher = await User.findById(payload.teacherId).select("name");
+      payload.teacherName = teacher?.name;
+    }
+    if (!payload.teacherName) {
+      res.status(400);
+      throw new Error("teacherName is required");
     }
     const timeError = validateSchoolHours(payload.startTime, payload.endTime);
     if (timeError) {
@@ -152,15 +195,15 @@ export const createOrUpdateTimetable = asyncHandler(async (req, res) => {
     created.push(doc);
   }
 
-  const populated = await Timetable.populate(created, { path: "teacherId", select: "name email role" });
-  res.status(201).json(Array.isArray(req.body.entries) ? populated : populated[0]);
+  res.status(201).json(Array.isArray(req.body.entries) ? created : created[0]);
 });
 
 export const getClassTimetable = asyncHandler(async (req, res) => {
   const className = req.params.className?.trim();
-  const division = req.params.division?.trim()?.toUpperCase();
+  const requestedDivision = req.params.division?.trim()?.toUpperCase();
+  const division = mapDivision(requestedDivision);
 
-  if (!SCHOOL_CLASSES.includes(className) || !DIVISIONS.includes(division)) {
+  if (!SCHOOL_CLASSES.includes(className) || !ALLOWED_DIVISIONS.includes(requestedDivision)) {
     res.status(400);
     throw new Error("Invalid class or division");
   }
@@ -173,8 +216,8 @@ export const getClassTimetable = asyncHandler(async (req, res) => {
 
   const records = await Timetable.find({ class: className, division })
     .sort({ day: 1, startTime: 1 })
-    .populate("teacherId", "name email");
-  res.json(records);
+    .lean();
+  res.json(records.map((row) => ({ ...row, displayDivision: requestedDivision })));
 });
 
 export const getTeacherTimetable = asyncHandler(async (req, res) => {
@@ -187,8 +230,14 @@ export const getTeacherTimetable = asyncHandler(async (req, res) => {
 
   const records = await Timetable.find({ teacherId })
     .sort({ day: 1, startTime: 1 })
-    .populate("teacherId", "name email");
-  res.json(records);
+    .lean();
+  const expanded = records.flatMap((row) =>
+    getMappedDisplayDivisions(row.division).map((division) => ({
+      ...row,
+      displayDivision: division
+    }))
+  );
+  res.json(expanded);
 });
 
 export const getTimetableByDay = asyncHandler(async (req, res) => {
@@ -206,7 +255,7 @@ export const getTimetableByDay = asyncHandler(async (req, res) => {
       throw new Error("Student profile is missing class/division");
     }
     query.class = profile.className;
-    query.division = profile.division;
+    query.division = mapDivision(profile.division);
   }
   if (req.user.role === "parent") {
     const profile = resolveParentProfile(req);
@@ -215,37 +264,55 @@ export const getTimetableByDay = asyncHandler(async (req, res) => {
       throw new Error("Parent profile is missing childClass/childDivision");
     }
     query.class = profile.className;
-    query.division = profile.division;
+    query.division = mapDivision(profile.division);
   }
 
   const records = await Timetable.find(query)
     .sort({ class: 1, division: 1, startTime: 1 })
-    .populate("teacherId", "name email");
+    .lean();
 
   res.json(records);
 });
 
 export const getStudentTimetable = asyncHandler(async (req, res) => {
   const profile = await resolveStudentProfile(req);
+  const requestedClass = req.query.class?.trim();
+  const requestedDivisionFromQuery = req.query.division?.trim()?.toUpperCase();
   if (!profile) {
-    res.status(404);
-    throw new Error("Student profile not found");
+    return res.json({
+      student: null,
+      timetable: []
+    });
+  }
+  const selectedClass = requestedClass || profile.className;
+  const requestedDivision = requestedDivisionFromQuery || profile.division?.toUpperCase();
+  const mappedDivision = mapDivision(requestedDivision);
+  if (!ALLOWED_DIVISIONS.includes(requestedDivision)) {
+    return res.json({
+      student: {
+        name: req.user.name,
+        class: selectedClass,
+        division: requestedDivision || ""
+      },
+      timetable: []
+    });
   }
 
   const timetable = await Timetable.find({
-    class: profile.className,
-    division: profile.division
+    class: selectedClass,
+    division: mappedDivision
   })
     .sort({ day: 1, startTime: 1 })
-    .populate("teacherId", "name email");
+    .lean();
 
   res.json({
     student: {
       name: req.user.name,
-      class: profile.className,
-      division: profile.division
+      class: selectedClass,
+      division: requestedDivision,
+      mappedDivision
     },
-    timetable
+    timetable: timetable.map((row) => ({ ...row, displayDivision: requestedDivision }))
   });
 });
 

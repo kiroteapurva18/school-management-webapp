@@ -3,6 +3,7 @@ import WeeklyTimetableTable from "../components/WeeklyTimetableTable";
 import { CLASSES, DAYS, DIVISIONS } from "../constants/timetable";
 import useAuth from "../hooks/useAuth";
 import api from "../services/api";
+import { isDivisionAllowed, mapDivision } from "../utils/division";
 
 const newEntry = { subject: "", teacherId: "", startTime: "10:00", endTime: "11:00" };
 
@@ -33,13 +34,13 @@ const TimetablePage = () => {
     try {
       const { data } = await api.get("/timetable/student");
       setStudentProfile(data.student);
-      setSelectedClass(data.student.class);
-      setSelectedDivision(data.student.division);
+      setSelectedClass(data.student?.class || "");
+      setSelectedDivision(data.student?.division || "");
       setRecords(data.timetable);
       cacheRef.current.set(`student:${data.student.class}:${data.student.division}`, data.timetable);
     } catch (err) {
-      const message = err.response?.data?.message || "Failed to load student timetable";
-      setError(message);
+      setError(err.response?.data?.message || "No timetable available");
+      setRecords([]);
     } finally {
       setLoading(false);
     }
@@ -59,7 +60,8 @@ const TimetablePage = () => {
       setRecords(data);
       cacheRef.current.set(cacheKey, data);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to load timetable");
+      setError("No timetable available");
+      setRecords([]);
     } finally {
       setLoading(false);
     }
@@ -107,8 +109,9 @@ const TimetablePage = () => {
       await api.post("/timetable", {
         entries: form.entries.map((entry) => ({
           class: form.class,
-          division: form.division,
+          division: mapDivision(form.division),
           day: form.day,
+          teacherName: teachers.find((teacher) => teacher._id === entry.teacherId)?.name || "",
           ...entry
         }))
       });
@@ -133,7 +136,7 @@ const TimetablePage = () => {
             Export PDF
           </button>
         </div>
-        {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+        {error && <p className="mb-3 text-sm text-slate-600">{error}</p>}
         <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
           <select
             value={selectedClass}
@@ -161,6 +164,10 @@ const TimetablePage = () => {
         </div>
         {loading ? (
           <p className="text-sm text-slate-600">Loading...</p>
+        ) : !selectedDivision || !isDivisionAllowed(selectedDivision) ? (
+          <p className="text-sm text-slate-600">No timetable available</p>
+        ) : !records.length ? (
+          <p className="text-sm text-slate-600">No timetable available</p>
         ) : selectedClass && selectedDivision ? (
           <WeeklyTimetableTable records={records} />
         ) : isStudent ? (
@@ -186,7 +193,7 @@ const TimetablePage = () => {
                 ))}
               </select>
               <select className="rounded border p-2" value={form.division} onChange={(e) => setForm((prev) => ({ ...prev, division: e.target.value }))}>
-                {DIVISIONS.map((division) => (
+                {DIVISIONS.filter((division) => ["A", "B"].includes(division)).map((division) => (
                   <option key={division} value={division}>{division}</option>
                 ))}
               </select>

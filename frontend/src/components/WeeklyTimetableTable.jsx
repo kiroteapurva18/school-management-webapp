@@ -40,7 +40,7 @@ const WeeklyTimetableTable = ({ records }) => {
                         >
                           {period.subject}
                         </span>
-                        <p className="text-xs text-slate-600">{period.teacherId?.name || "Teacher"}</p>
+                        <p className="text-xs text-slate-600">{period.teacherName || period.teacherId?.name || "Teacher"}</p>
                       </div>
                     ) : (
                       <span className="text-slate-300">-</span>
