@@ -31,7 +31,6 @@ const roleNavItems = {
     { to: "/dashboard", label: "Dashboard" },
     { to: "/notifications", label: "Notifications" },
     { to: "/leave-requests", label: "Leave Requests" },
-    { to: "/results", label: "Results" },
     { to: "/fees", label: "Fees" }
   ]
 };

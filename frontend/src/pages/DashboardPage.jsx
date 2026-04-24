@@ -23,20 +23,14 @@ const DashboardPage = () => {
         <h2 className="text-2xl font-bold">Welcome, {isParent ? parentHeader : user?.name}</h2>
         {isParent ? (
           <>
-            <p className="mt-2 text-slate-700">
-              Student: {user?.studentName || "Loading student details..."}
-            </p>
-            {childClass && <p className="text-slate-700">Class: {childClass}</p>}
-            {childDivision && <p className="text-slate-700">Division: {childDivision}</p>}
+            <p className="mt-2 text-slate-700">Student: {user?.studentName || "Student"}</p>
+            <p className="text-slate-700">Class: {childClass || "8"}</p>
+            <p className="text-slate-700">Division: {childDivision || "B"}</p>
           </>
         ) : isStudent ? (
           <>
-            <p className="mt-2 text-slate-700">
-              Class: {classValue || "Loading class details..."}
-            </p>
-            <p className="text-slate-700">
-              Division: {divisionValue || "Loading division details..."}
-            </p>
+            <p className="mt-2 text-slate-700">Class: {classValue || "8"}</p>
+            <p className="text-slate-700">Division: {divisionValue || "B"}</p>
             {user?.rollNumber !== undefined && user?.rollNumber !== null && (
               <p className="text-slate-700">Roll Number: {user.rollNumber}</p>
             )}

@@ -61,13 +61,7 @@ export const createLeaveRequest = asyncHandler(async (req, res) => {
 });
 
 export const getTeacherLeaveRequests = asyncHandler(async (req, res) => {
-  const query = {};
-  if (req.user.className && req.user.division) {
-    query.class = req.user.className;
-    query.division = mapDivision(req.user.division);
-  }
-
-  const records = await LeaveRequest.find(query)
+  const records = await LeaveRequest.find({})
     .sort({ createdAt: -1 })
     .populate("parentId", "name email");
 
@@ -77,6 +71,11 @@ export const getTeacherLeaveRequests = asyncHandler(async (req, res) => {
       parentName: item.parentId?.name || "Parent"
     }))
   );
+});
+
+export const getParentLeaveRequests = asyncHandler(async (req, res) => {
+  const records = await LeaveRequest.find({ parentId: req.user._id }).sort({ createdAt: -1 });
+  res.json(records);
 });
 
 export const updateLeaveRequestStatus = asyncHandler(async (req, res) => {

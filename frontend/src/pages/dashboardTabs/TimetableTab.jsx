@@ -47,9 +47,9 @@ const buildDefaultTimetable = (className, division) =>
         endTime: slot.endTime,
         subject,
         teacherName: SUBJECT_TEACHER_MAP[subject] || "Teacher",
-        class: className || "N/A",
-        division: division || "N/A",
-        displayDivision: division || "N/A"
+        class: className || "8",
+        division: division || "B",
+        displayDivision: division || "B"
       };
     })
   );
@@ -125,8 +125,8 @@ const TimetableTab = ({ user }) => {
 
   const classValues = [...new Set(sortedRows.map((row) => row.class).filter(Boolean))];
   const divisionValues = [...new Set(sortedRows.map((row) => row.displayDivision || row.division).filter(Boolean))];
-  const classLabel = classValues.length === 1 ? classValues[0] : "Multiple";
-  const divisionLabel = divisionValues.length === 1 ? divisionValues[0] : "Multiple";
+  const classLabel = classValues.length === 1 ? classValues[0] : classValues[0] || "8";
+  const divisionLabel = divisionValues.length === 1 ? divisionValues[0] : divisionValues[0] || "B";
 
   return (
     <div className="space-y-3">
@@ -180,7 +180,7 @@ const TimetableTab = ({ user }) => {
                 <td className={`border p-2 ${row.startTime === "13:00" && row.endTime === "14:00" ? "bg-amber-100 font-semibold" : ""}`}>
                   {row.startTime} - {row.endTime}
                 </td>
-                <td className={`border p-2 ${row.subject === "Lunch Break" ? "bg-amber-100 font-semibold" : ""}`}>{row.subject || "N/A"}</td>
+                <td className={`border p-2 ${row.subject === "Lunch Break" ? "bg-amber-100 font-semibold" : ""}`}>{row.subject || "English"}</td>
                 <td className="border p-2">{getTeacherName(row)}</td>
               </tr>
             ))

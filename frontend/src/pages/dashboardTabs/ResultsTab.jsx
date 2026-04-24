@@ -10,6 +10,7 @@ const ResultsTab = ({ user }) => {
   const fetchData = async () => {
     setLoading(true);
     const { data } = await api.get("/results/student");
+    console.log("Results API response:", data);
     setItems(data);
     setLoading(false);
   };
@@ -24,6 +25,7 @@ const ResultsTab = ({ user }) => {
     fd.append("division", form.division);
     if (form.percentage) fd.append("percentage", form.percentage);
     await api.post("/results/upload", fd, { headers: { "Content-Type": "multipart/form-data" } });
+    alert("Result uploaded successfully");
     setForm({ class: "", division: "", percentage: "" });
     setFile(null);
     fetchData();
@@ -45,8 +47,8 @@ const ResultsTab = ({ user }) => {
           {items.map((r) => (
             <div key={r._id} className="rounded border bg-white p-3">
               <p className="font-semibold">Class {r.class}-{r.division}</p>
-              <p className="text-sm text-slate-700">Percentage: {r.percentage ?? "N/A"}%</p>
-              <a className="text-sm text-blue-600" href={r.resultPdfUrl} target="_blank" rel="noreferrer">View Result PDF</a>
+              <p className="text-sm text-slate-700">Percentage: {r.percentage ?? 0}%</p>
+              <button className="text-sm text-blue-600" onClick={() => window.open(r.resultPdfUrl, "_blank", "noopener,noreferrer")}>View PDF</button>
             </div>
           ))}
         </div>

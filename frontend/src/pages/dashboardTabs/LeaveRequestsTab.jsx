@@ -3,6 +3,7 @@ import api from "../../services/api";
 
 const LeaveRequestsTab = ({ user }) => {
   const [items, setItems] = useState([]);
+  const [parentItems, setParentItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ fromDate: "", toDate: "", reason: "" });
 
@@ -15,12 +16,17 @@ const LeaveRequestsTab = ({ user }) => {
 
   useEffect(() => {
     if (user?.role === "teacher") fetchTeacherItems().catch(() => setLoading(false));
+    if (user?.role === "parent") {
+      api.get("/leave-request/my").then(({ data }) => setParentItems(data)).catch(() => setParentItems([]));
+    }
   }, [user?.role]);
 
   const submitParent = async (e) => {
     e.preventDefault();
     await api.post("/leave-request", form);
     setForm({ fromDate: "", toDate: "", reason: "" });
+    alert("Leave Request Submitted Successfully");
+    api.get("/leave-request/my").then(({ data }) => setParentItems(data)).catch(() => setParentItems([]));
   };
 
   const updateStatus = async (id, status) => {
@@ -45,6 +51,28 @@ const LeaveRequestsTab = ({ user }) => {
           <input className="rounded border p-2 md:col-span-2" placeholder="Reason" value={form.reason} onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))} required />
           <button className="rounded bg-blue-600 p-2 text-white">Submit Leave Request</button>
         </form>
+        <div className="overflow-x-auto rounded border bg-white">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-slate-100">
+                <th className="border p-2">Dates</th><th className="border p-2">Reason</th><th className="border p-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {parentItems.map((item) => (
+                <tr key={item._id}>
+                  <td className="border p-2">{new Date(item.fromDate).toLocaleDateString()} - {new Date(item.toDate).toLocaleDateString()}</td>
+                  <td className="border p-2">{item.reason}</td>
+                  <td className="border p-2">
+                    <span className={`rounded px-2 py-1 text-xs ${item.status === "Approved" ? "bg-emerald-100 text-emerald-700" : item.status === "Rejected" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}>
+                      {item.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }
