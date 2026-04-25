@@ -224,6 +224,12 @@ export const createOrUpdateTimetable = asyncHandler(async (req, res) => {
   res.status(201).json(Array.isArray(req.body.entries) ? created : created[0]);
 });
 
+export const getAllTimetables = asyncHandler(async (req, res) => {
+  const records = await Timetable.find().sort({ class: 1, division: 1, day: 1, startTime: 1 }).lean();
+  const hydrated = await hydrateTeacherNames(records);
+  res.json(hydrated.map((row) => toViewRow(row)));
+});
+
 export const getClassTimetable = asyncHandler(async (req, res) => {
   const className = req.params.className?.trim();
   const requestedDivision = req.params.division?.trim()?.toUpperCase();

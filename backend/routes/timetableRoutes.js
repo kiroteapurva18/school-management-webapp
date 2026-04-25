@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createOrUpdateTimetable,
+  getAllTimetables,
   getClassTimetable,
   getStudentTimetable,
   getTeacherUsers,
@@ -14,6 +15,7 @@ const router = express.Router();
 
 router.use(protect);
 
+router.get("/", allowRoles("admin"), getAllTimetables);
 router.post("/", allowRoles("admin"), createOrUpdateTimetable);
 router.put("/update", allowRoles("admin"), updateTimetableSlot);
 router.get("/teachers", allowRoles("admin"), getTeacherUsers);
