@@ -23,19 +23,23 @@ const DashboardPage = () => {
         <h2 className="text-2xl font-bold">Welcome, {isParent ? parentHeader : user?.name}</h2>
         {isParent ? (
           <>
-            <p className="mt-2 text-slate-700">Student: {user?.studentName || "Student"}</p>
-            <p className="text-slate-700">Class: {childClass || "8"}</p>
-            <p className="text-slate-700">Division: {childDivision || "B"}</p>
+            <p className="mt-2 text-slate-700">Student: {user?.studentName || "N/A"}</p>
+            <p className="text-slate-700">Class: {childClass || "N/A"}</p>
+            <p className="text-slate-700">Division: {childDivision || "N/A"}</p>
           </>
         ) : isStudent ? (
           <>
-            <p className="mt-2 text-slate-700">Class: {classValue || "8"}</p>
-            <p className="text-slate-700">Division: {divisionValue || "B"}</p>
+            <p className="mt-2 text-slate-700">Class: {classValue || "N/A"}</p>
+            <p className="text-slate-700">Division: {divisionValue || "N/A"}</p>
             {user?.rollNumber !== undefined && user?.rollNumber !== null && (
               <p className="text-slate-700">Roll Number: {user.rollNumber}</p>
             )}
           </>
-        ) : (isTeacher || isAdmin) ? null : null}
+        ) : isTeacher ? (
+          <>
+            <p className="mt-2 text-slate-700">Subject: {user?.subject || "N/A"}</p>
+          </>
+        ) : null}
         <p className="mt-1 text-slate-600">
           You are logged in as <span className="font-semibold capitalize">{user?.role}</span>.
         </p>

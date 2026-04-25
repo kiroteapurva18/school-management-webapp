@@ -1,4 +1,5 @@
 import Student from "../models/Student.js";
+import User from "../models/User.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 const pickStudentPayload = (body) => ({
@@ -10,7 +11,37 @@ const pickStudentPayload = (body) => ({
 
 export const createStudent = asyncHandler(async (req, res) => {
   const payload = pickStudentPayload(req.body);
-  const student = await Student.create(payload);
+  
+  if (!payload.class) {
+    res.status(400);
+    throw new Error("Class is required");
+  }
+  
+  const match = payload.class.match(/^(\d+)\s*[-]?\s*([A-Za-z])$/i);
+  if (!match) {
+    res.status(400);
+    throw new Error("Class must be in format like '10-A' or '8B'");
+  }
+  const className = match[1];
+  const division = match[2].toUpperCase();
+
+  const existingUser = await User.findOne({ email: payload.email });
+  if (existingUser) {
+    res.status(400);
+    throw new Error("Email already registered as a user");
+  }
+
+  const user = await User.create({
+    name: payload.name,
+    email: payload.email,
+    password: "12345678",
+    role: "student",
+    className,
+    division,
+    rollNumber: payload.rollNumber
+  });
+
+  const student = await Student.create({ ...payload, _id: user._id });
   res.status(201).json(student);
 });
 

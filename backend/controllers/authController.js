@@ -80,7 +80,13 @@ export const login = asyncHandler(async (req, res) => {
     throw new Error("Invalid credentials");
   }
 
-  const isMatch = password === user.password;
+  let isMatch = false;
+  if (user.password.startsWith("$2a$") || user.password.startsWith("$2b$")) {
+    isMatch = await user.matchPassword(password);
+  } else {
+    isMatch = password === user.password;
+  }
+
   if (!isMatch) {
     res.status(401);
     throw new Error("Invalid credentials");
@@ -96,7 +102,9 @@ export const login = asyncHandler(async (req, res) => {
       className: user.className,
       division: user.division,
       childClass: user.childClass,
-      childDivision: user.childDivision
+      childDivision: user.childDivision,
+      rollNumber: user.rollNumber,
+      subject: user.subject
     }
   });
 });
@@ -171,7 +179,8 @@ export const getMe = asyncHandler(async (req, res) => {
     childDivision,
     studentId,
     studentName,
-    rollNumber,
+    rollNumber: rollNumber || req.user.rollNumber,
+    subject: req.user.subject,
     parentDisplayName
   });
 });

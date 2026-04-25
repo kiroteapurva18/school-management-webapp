@@ -3,56 +3,7 @@ import api from "../../services/api";
 import { mapDivision } from "../../utils/division";
 import { DAYS } from "../../constants/timetable";
 
-const SUBJECT_TEACHER_MAP = {
-  History: "Mrs. Patil",
-  Marathi: "Mr. Wankhede",
-  PT: "Mr. Lanjulkar",
-  Hindi: "Mr. Bhumbre",
-  Geography: "Mrs. Satav",
-  English: "Mr. Thakre",
-  Science: "Mr. Manza",
-  Mathematics: "Mr. Verma",
-  "Social Studies": "Mrs. Satav",
-  Computer: "Mr. Manza",
-  "Hindi / Marathi": "Mr. Wankhede",
-  "Lunch Break": "-"
-};
 
-const WEEKLY_SCHEDULE = {
-  Monday: ["English", "Mathematics", "Science", "Lunch Break", "History", "Computer", "Hindi / Marathi"],
-  Tuesday: ["Mathematics", "English", "Geography", "Lunch Break", "Science", "PT", "Hindi / Marathi"],
-  Wednesday: ["Science", "English", "Mathematics", "Lunch Break", "Social Studies", "Computer", "Marathi"],
-  Thursday: ["English", "Science", "Geography", "Lunch Break", "Mathematics", "Hindi", "PT"],
-  Friday: ["Mathematics", "English", "Science", "Lunch Break", "History", "Computer", "Marathi"]
-};
-
-const TIME_SLOTS = [
-  { startTime: "10:00", endTime: "11:00" },
-  { startTime: "11:00", endTime: "12:00" },
-  { startTime: "12:00", endTime: "13:00" },
-  { startTime: "13:00", endTime: "14:00" },
-  { startTime: "14:00", endTime: "15:00" },
-  { startTime: "15:00", endTime: "16:00" },
-  { startTime: "16:00", endTime: "17:00" }
-];
-
-const buildDefaultTimetable = (className, division) =>
-  DAYS.flatMap((day) =>
-    TIME_SLOTS.map((slot, index) => {
-      const subject = WEEKLY_SCHEDULE[day][index];
-      return {
-        _id: `default-${day}-${slot.startTime}`,
-        day,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        subject,
-        teacherName: SUBJECT_TEACHER_MAP[subject] || "Teacher",
-        class: className || "8",
-        division: division || "B",
-        displayDivision: division || "B"
-      };
-    })
-  );
 
 const TimetableTab = ({ user }) => {
   const [rows, setRows] = useState([]);
@@ -62,11 +13,7 @@ const TimetableTab = ({ user }) => {
   const [error, setError] = useState("");
 
   const getTeacherName = (row) => {
-    const raw = row.teacherName?.trim();
-    if (!raw || raw === "Assigned Teacher") {
-      return SUBJECT_TEACHER_MAP[row.subject] || "Teacher";
-    }
-    return raw;
+    return row.teacherName?.trim() || "Teacher";
   };
 
   const loadData = async () => {
@@ -75,32 +22,26 @@ const TimetableTab = ({ user }) => {
     try {
       if (user?.role === "teacher") {
         const { data } = await api.get("/timetable/teacher");
-        console.log("Teacher timetable response:", data);
-        setRows(data?.length ? data : buildDefaultTimetable(user?.className, user?.division));
+        setRows(data?.length ? data : []);
       } else if (user?.role === "student") {
         const className = user?.className || user?.class;
         const division = (user?.division || "").toUpperCase();
         const mappedDivision = mapDivision(division);
-        console.log("user.class:", className);
-        console.log("user.division:", division);
-        console.log("mapped division:", mappedDivision);
-        console.log("Student timetable fetch with:", { className, division: mappedDivision });
         const { data } = await api.get("/timetable/student");
-        console.log("Student timetable response:", data);
-        setRows(data?.timetable?.length ? data.timetable : buildDefaultTimetable(className, division || "A"));
+        setRows(data?.timetable?.length ? data.timetable : []);
       } else if (user?.role === "parent" && user?.childClass && user?.childDivision) {
         const { data } = await api.get(`/timetable/class/${encodeURIComponent(user.childClass)}/division/${encodeURIComponent(user.childDivision)}`);
-        setRows(data?.length ? data : buildDefaultTimetable(user?.childClass, user?.childDivision));
+        setRows(data?.length ? data : []);
       } else if (user?.role === "admin") {
-        const [dayRes, teachersRes] = await Promise.all([api.get(`/timetable/day/${DAYS[0]}`), api.get("/timetable/teachers")]);
-        setRows(dayRes.data?.length ? dayRes.data : buildDefaultTimetable("1", "A"));
+        const [dayRes, teachersRes] = await Promise.all([api.get(`/timetable/day/${DAYS[0]}`), api.get("/teachers")]);
+        setRows(dayRes.data?.length ? dayRes.data : []);
         setTeachers(teachersRes.data || []);
       } else {
-        setRows(buildDefaultTimetable(user?.className || "1", (user?.division || "A").toUpperCase()));
+        setRows([]);
       }
     } catch (err) {
       setError("");
-      setRows(buildDefaultTimetable(user?.className || user?.class || "1", (user?.division || "A").toUpperCase()));
+      setRows([]);
     } finally {
       setLoading(false);
     }
@@ -125,8 +66,8 @@ const TimetableTab = ({ user }) => {
 
   const classValues = [...new Set(sortedRows.map((row) => row.class).filter(Boolean))];
   const divisionValues = [...new Set(sortedRows.map((row) => row.displayDivision || row.division).filter(Boolean))];
-  const classLabel = classValues.length === 1 ? classValues[0] : classValues[0] || "8";
-  const divisionLabel = divisionValues.length === 1 ? divisionValues[0] : divisionValues[0] || "B";
+  const classLabel = classValues.length === 1 ? classValues[0] : classValues[0] || user?.className || user?.class || "N/A";
+  const divisionLabel = divisionValues.length === 1 ? divisionValues[0] : divisionValues[0] || user?.division || "N/A";
 
   return (
     <div className="space-y-3">
@@ -169,21 +110,29 @@ const TimetableTab = ({ user }) => {
           </tr>
         </thead>
         <tbody>
-          {grouped.map((group) =>
-            group.rows.map((row, index) => (
-              <tr key={row._id}>
-                {index === 0 && (
-                  <td rowSpan={group.rows.length} className="border p-2 align-top font-semibold">
-                    {group.day}
+          {grouped.length === 0 ? (
+            <tr>
+              <td colSpan="4" className="border p-4 text-center text-slate-500">
+                No timetable configured for this view.
+              </td>
+            </tr>
+          ) : (
+            grouped.map((group) =>
+              group.rows.map((row, index) => (
+                <tr key={row._id}>
+                  {index === 0 && (
+                    <td rowSpan={group.rows.length} className="border p-2 align-top font-semibold">
+                      {group.day}
+                    </td>
+                  )}
+                  <td className={`border p-2 ${row.startTime === "13:00" && row.endTime === "14:00" ? "bg-amber-100 font-semibold" : ""}`}>
+                    {row.startTime} - {row.endTime}
                   </td>
-                )}
-                <td className={`border p-2 ${row.startTime === "13:00" && row.endTime === "14:00" ? "bg-amber-100 font-semibold" : ""}`}>
-                  {row.startTime} - {row.endTime}
-                </td>
-                <td className={`border p-2 ${row.subject === "Lunch Break" ? "bg-amber-100 font-semibold" : ""}`}>{row.subject || "English"}</td>
-                <td className="border p-2">{getTeacherName(row)}</td>
-              </tr>
-            ))
+                  <td className={`border p-2 ${row.subject === "Lunch Break" ? "bg-amber-100 font-semibold" : ""}`}>{row.subject || "N/A"}</td>
+                  <td className="border p-2">{getTeacherName(row)}</td>
+                </tr>
+              ))
+            )
           )}
         </tbody>
         </table>

@@ -1,4 +1,5 @@
 import Teacher from "../models/Teacher.js";
+import User from "../models/User.js";
 import asyncHandler from "../utils/asyncHandler.js";
 
 const pickTeacherPayload = (body) => ({
@@ -8,7 +9,23 @@ const pickTeacherPayload = (body) => ({
 });
 
 export const createTeacher = asyncHandler(async (req, res) => {
-  const teacher = await Teacher.create(pickTeacherPayload(req.body));
+  const payload = pickTeacherPayload(req.body);
+
+  const existingUser = await User.findOne({ email: payload.email });
+  if (existingUser) {
+    res.status(400);
+    throw new Error("Email already registered as a user");
+  }
+
+  const user = await User.create({
+    name: payload.name,
+    email: payload.email,
+    password: "12345678",
+    role: "teacher",
+    subject: payload.subject
+  });
+
+  const teacher = await Teacher.create({ ...payload, _id: user._id });
   res.status(201).json(teacher);
 });
 
