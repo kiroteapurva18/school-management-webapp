@@ -1,11 +1,13 @@
 import express from "express";
-import { getStudentFees, upsertFees } from "../controllers/feeController.js";
+import { addFee, getAllFees, getStudentFees, payFee } from "../controllers/feeController.js";
 import { allowRoles, protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 router.use(protect);
 
-router.get("/student", allowRoles("parent", "student", "admin"), getStudentFees);
-router.put("/update", allowRoles("admin"), upsertFees);
+router.post("/", allowRoles("admin"), addFee);
+router.get("/", allowRoles("admin"), getAllFees);
+router.get("/student/:studentId", allowRoles("parent", "student", "admin"), getStudentFees);
+router.put("/:id/pay", allowRoles("admin"), payFee);
 
 export default router;

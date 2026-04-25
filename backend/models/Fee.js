@@ -2,10 +2,11 @@ import mongoose from "mongoose";
 
 const feeSchema = new mongoose.Schema(
   {
-    studentId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, unique: true },
-    examFees: { type: Number, default: 800 },
-    pendingFees: { type: Number, default: 0 },
-    status: { type: String, enum: ["Paid", "Pending"], default: "Pending" }
+    studentId: { type: mongoose.Schema.Types.ObjectId, ref: "Student", required: true },
+    amount: { type: Number, required: true },
+    dueDate: { type: Date, required: true },
+    status: { type: String, enum: ["Paid", "Pending"], default: "Pending" },
+    paidAt: { type: Date }
   },
   { timestamps: true }
 );
