@@ -225,7 +225,70 @@ export const createOrUpdateTimetable = asyncHandler(async (req, res) => {
 });
 
 export const getAllTimetables = asyncHandler(async (req, res) => {
-  const records = await Timetable.find().sort({ class: 1, division: 1, day: 1, startTime: 1 }).lean();
+  let records = await Timetable.find().sort({ class: 1, division: 1, day: 1, startTime: 1 }).lean();
+
+  if (records.length === 0) {
+    const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+    const TIME_SLOTS = [
+      { startTime: "10:00", endTime: "11:00" },
+      { startTime: "11:00", endTime: "12:00" },
+      { startTime: "12:00", endTime: "13:00" },
+      { startTime: "13:00", endTime: "14:00" },
+      { startTime: "14:00", endTime: "15:00" },
+      { startTime: "15:00", endTime: "16:00" },
+      { startTime: "16:00", endTime: "17:00" }
+    ];
+    const WEEKLY_SCHEDULE = {
+      Monday: ["English", "Mathematics", "Science", "Lunch Break", "History", "Computer", "Hindi / Marathi"],
+      Tuesday: ["Mathematics", "English", "Geography", "Lunch Break", "Science", "PT", "Hindi / Marathi"],
+      Wednesday: ["Science", "English", "Mathematics", "Lunch Break", "History", "Computer", "Marathi"],
+      Thursday: ["English", "Science", "Geography", "Lunch Break", "Mathematics", "Hindi", "PT"],
+      Friday: ["Mathematics", "English", "Science", "Lunch Break", "History", "Computer", "Marathi"]
+    };
+    const SUBJECT_TEACHER_MAP = {
+      History: "Mrs. Patil",
+      Marathi: "Mr. Wankhede",
+      PT: "Mr. Lanjulkar",
+      Hindi: "Mr. Bhumbre",
+      Geography: "Mrs. Satav",
+      English: "Mr. Thakre",
+      Science: "Mr. Manza",
+      Mathematics: "Mr. Verma",
+      Computer: "Mr. Manza",
+      "Hindi / Marathi": "Mr. Wankhede",
+      "Lunch Break": "-"
+    };
+
+    const users = await User.find({ role: "teacher" });
+    const userMap = {};
+    users.forEach(u => userMap[u.name.toLowerCase()] = u._id);
+
+    const defaultEntries = [];
+    DAYS.forEach(day => {
+      TIME_SLOTS.forEach((slot, index) => {
+        const subject = WEEKLY_SCHEDULE[day][index];
+        const teacherName = SUBJECT_TEACHER_MAP[subject];
+        let teacherId = null;
+        if (teacherName && teacherName !== "-") {
+          teacherId = userMap[teacherName.toLowerCase()] || null;
+        }
+        
+        defaultEntries.push({
+          class: "8",
+          division: "B",
+          day,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          subject,
+          teacherId
+        });
+      });
+    });
+
+    await Timetable.insertMany(defaultEntries);
+    records = await Timetable.find().sort({ class: 1, division: 1, day: 1, startTime: 1 }).lean();
+  }
+
   const hydrated = await hydrateTeacherNames(records);
   res.json(hydrated.map((row) => toViewRow(row)));
 });

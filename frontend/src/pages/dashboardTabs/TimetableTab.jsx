@@ -3,7 +3,56 @@ import api from "../../services/api";
 import { mapDivision } from "../../utils/division";
 import { DAYS } from "../../constants/timetable";
 
+const SUBJECT_TEACHER_MAP = {
+  History: "Mrs. Patil",
+  Marathi: "Mr. Wankhede",
+  PT: "Mr. Lanjulkar",
+  Hindi: "Mr. Bhumbre",
+  Geography: "Mrs. Satav",
+  English: "Mr. Thakre",
+  Science: "Mr. Manza",
+  Mathematics: "Mr. Verma",
+  "Social Studies": "Mrs. Satav",
+  Computer: "Mr. Manza",
+  "Hindi / Marathi": "Mr. Wankhede",
+  "Lunch Break": "-"
+};
 
+const WEEKLY_SCHEDULE = {
+  Monday: ["English", "Mathematics", "Science", "Lunch Break", "History", "Computer", "Hindi / Marathi"],
+  Tuesday: ["Mathematics", "English", "Geography", "Lunch Break", "Science", "PT", "Hindi / Marathi"],
+  Wednesday: ["Science", "English", "Mathematics", "Lunch Break", "History", "Computer", "Marathi"],
+  Thursday: ["English", "Science", "Geography", "Lunch Break", "Mathematics", "Hindi", "PT"],
+  Friday: ["Mathematics", "English", "Science", "Lunch Break", "History", "Computer", "Marathi"]
+};
+
+const TIME_SLOTS = [
+  { startTime: "10:00", endTime: "11:00" },
+  { startTime: "11:00", endTime: "12:00" },
+  { startTime: "12:00", endTime: "13:00" },
+  { startTime: "13:00", endTime: "14:00" },
+  { startTime: "14:00", endTime: "15:00" },
+  { startTime: "15:00", endTime: "16:00" },
+  { startTime: "16:00", endTime: "17:00" }
+];
+
+const buildDefaultTimetable = (className, division) =>
+  DAYS.flatMap((day) =>
+    TIME_SLOTS.map((slot, index) => {
+      const subject = WEEKLY_SCHEDULE[day][index];
+      return {
+        _id: `default-${day}-${slot.startTime}`,
+        day,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        subject,
+        teacherName: SUBJECT_TEACHER_MAP[subject] || "Teacher",
+        class: className || "8",
+        division: division || "B",
+        displayDivision: division || "B"
+      };
+    })
+  );
 
 const TimetableTab = ({ user }) => {
   const [rows, setRows] = useState([]);
@@ -11,37 +60,69 @@ const TimetableTab = ({ user }) => {
   const [slotForm, setSlotForm] = useState({ id: "", subject: "", teacherId: "", substituteTeacherId: "" });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [cls, setCls] = useState("");
+  const [div, setDiv] = useState("");
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await api.get("/auth/me");
+        const userData = res.data;
+        if (userData.role === "admin" || userData.role === "teacher") {
+          setCls("8");
+          setDiv("B");
+        } else if (userData.role === "parent") {
+          setCls(userData.childClass || "8");
+          setDiv(userData.childDivision || "B");
+        } else {
+          setCls(userData.className || userData.class || "8");
+          setDiv(userData.division || "B");
+        }
+      } catch (err) {
+        console.error(err);
+        setCls("8");
+        setDiv("B");
+      }
+    };
+    if (user) fetchUser();
+  }, [user]);
 
   const getTeacherName = (row) => {
-    return row.teacherName?.trim() || "Teacher";
+    const raw = row.teacherName?.trim();
+    if (!raw || raw === "Teacher") {
+      return SUBJECT_TEACHER_MAP[row.subject] || "Teacher";
+    }
+    return raw;
   };
 
   const loadData = async () => {
+    if (!cls || !div) return;
     setLoading(true);
     setError("");
+    console.log("Class:", cls);
+    console.log("Division:", div);
+
     try {
       if (user?.role === "teacher") {
         const { data } = await api.get("/timetable/teacher");
-        setRows(data?.length ? data : []);
+        setRows(data?.length ? data : buildDefaultTimetable(cls, div));
       } else if (user?.role === "student") {
-        const className = user?.className || user?.class;
-        const division = (user?.division || "").toUpperCase();
-        const mappedDivision = mapDivision(division);
-        const { data } = await api.get("/timetable/student");
-        setRows(data?.timetable?.length ? data.timetable : []);
-      } else if (user?.role === "parent" && user?.childClass && user?.childDivision) {
-        const { data } = await api.get(`/timetable/class/${encodeURIComponent(user.childClass)}/division/${encodeURIComponent(user.childDivision)}`);
-        setRows(data?.length ? data : []);
+        const { data } = await api.get(`/timetable/class/${cls}/div/${div.toUpperCase()}`);
+        setRows(data?.length ? data : buildDefaultTimetable(cls, div));
+      } else if (user?.role === "parent") {
+        const { data } = await api.get(`/timetable/class/${encodeURIComponent(cls)}/div/${encodeURIComponent(div.toUpperCase())}`);
+        setRows(data?.length ? data : buildDefaultTimetable(cls, div));
       } else if (user?.role === "admin") {
-        const [dayRes, teachersRes] = await Promise.all([api.get(`/timetable/day/${DAYS[0]}`), api.get("/teachers")]);
-        setRows(dayRes.data?.length ? dayRes.data : []);
+        const [dayRes, teachersRes] = await Promise.all([api.get(`/timetable`), api.get("/teachers")]);
+        setRows(dayRes.data?.length ? dayRes.data : buildDefaultTimetable(cls, div));
         setTeachers(teachersRes.data || []);
       } else {
-        setRows([]);
+        setRows(buildDefaultTimetable(cls, div));
       }
     } catch (err) {
+      console.error(err);
       setError("");
-      setRows([]);
+      setRows(buildDefaultTimetable(cls, div));
     } finally {
       setLoading(false);
     }
@@ -49,7 +130,7 @@ const TimetableTab = ({ user }) => {
 
   useEffect(() => {
     loadData();
-  }, [user]);
+  }, [cls, div, user]);
 
   if (loading) return <p className="text-sm text-slate-600">Loading...</p>;
   if (error) return <p className="text-sm text-slate-600">{error}</p>;
@@ -64,10 +145,7 @@ const TimetableTab = ({ user }) => {
     rows: sortedRows.filter((row) => row.day === day)
   })).filter((group) => group.rows.length > 0);
 
-  const classValues = [...new Set(sortedRows.map((row) => row.class).filter(Boolean))];
-  const divisionValues = [...new Set(sortedRows.map((row) => row.displayDivision || row.division).filter(Boolean))];
-  const classLabel = classValues.length === 1 ? classValues[0] : classValues[0] || user?.className || user?.class || "N/A";
-  const divisionLabel = divisionValues.length === 1 ? divisionValues[0] : divisionValues[0] || user?.division || "N/A";
+
 
   return (
     <div className="space-y-3">
@@ -97,7 +175,7 @@ const TimetableTab = ({ user }) => {
         </form>
       )}
       <div className="rounded border bg-white px-4 py-2 text-sm text-slate-700">
-        Class: <span className="font-semibold">{classLabel}</span> | Division: <span className="font-semibold">{divisionLabel}</span>
+        Class: <span className="font-semibold">{cls}</span> | Division: <span className="font-semibold">{div}</span>
       </div>
       <div className="overflow-x-auto rounded border bg-white">
         <table className="w-full border-collapse text-sm">
